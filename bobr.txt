@@ -1,4 +1,4 @@
--- Fixed Cheat Menu
+-- Complete Cheat Menu with Aimbot and ESP
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -6,11 +6,11 @@ local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 
-print("=== FIXED CHEAT MENU ===")
+print("=== COMPLETE CHEAT MENU ===")
 
 -- Создаем меню
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "FixedCheatMenu"
+screenGui.Name = "CompleteCheatMenu"
 screenGui.Parent = CoreGui
 
 local mainFrame = Instance.new("Frame")
@@ -19,7 +19,7 @@ mainFrame.Parent = screenGui
 mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
-mainFrame.Size = UDim2.new(0, 200, 0, 200)
+mainFrame.Size = UDim2.new(0, 200, 0, 300)
 mainFrame.Active = true
 mainFrame.Draggable = true
 
@@ -29,7 +29,7 @@ title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 title.BorderSizePixel = 0
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Font = Enum.Font.SourceSansBold
-title.Text = "FIXED CHEATS"
+title.Text = "COMPLETE CHEATS"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 14
 
@@ -38,6 +38,8 @@ local speedEnabled = false
 local jumpEnabled = false
 local noclipEnabled = false
 local flyEnabled = false
+local espEnabled = false
+local aimbotEnabled = false
 
 -- Функция для создания кнопок
 local function createButton(text, position)
@@ -56,7 +58,7 @@ local function createButton(text, position)
 end
 
 -- 1. SPEED HACK
-local speedBtn = createButton("SPEED: OFF", UDim2.new(0.05, 0, 0.2, 0))
+local speedBtn = createButton("SPEED: OFF", UDim2.new(0.05, 0, 0.15, 0))
 speedBtn.MouseButton1Click:Connect(function()
     speedEnabled = not speedEnabled
     local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
@@ -79,7 +81,7 @@ speedBtn.MouseButton1Click:Connect(function()
 end)
 
 -- 2. JUMP POWER
-local jumpBtn = createButton("JUMP: OFF", UDim2.new(0.05, 0, 0.4, 0))
+local jumpBtn = createButton("JUMP: OFF", UDim2.new(0.05, 0, 0.25, 0))
 jumpBtn.MouseButton1Click:Connect(function()
     jumpEnabled = not jumpEnabled
     local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
@@ -102,7 +104,7 @@ jumpBtn.MouseButton1Click:Connect(function()
 end)
 
 -- 3. NOCLIP
-local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.6, 0))
+local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.35, 0))
 noclipBtn.MouseButton1Click:Connect(function()
     noclipEnabled = not noclipEnabled
     
@@ -143,7 +145,7 @@ noclipBtn.MouseButton1Click:Connect(function()
 end)
 
 -- 4. FLY
-local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.8, 0))
+local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.45, 0))
 local flyBodyVelocity
 
 flyBtn.MouseButton1Click:Connect(function()
@@ -195,6 +197,155 @@ flyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- 5. ESP
+local espBtn = createButton("ESP: OFF", UDim2.new(0.05, 0, 0.55, 0))
+local highlights = {}
+
+espBtn.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    
+    if espEnabled then
+        espBtn.Text = "ESP: ON"
+        espBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        print("✅ ESP ON")
+        
+        -- Включить ESP для всех игроков
+        for _, otherPlayer in pairs(Players:GetPlayers()) do
+            if otherPlayer ~= player and otherPlayer.Character then
+                local highlight = Instance.new("Highlight")
+                highlight.FillColor = Color3.new(1, 0, 0)  -- Красный цвет
+                highlight.OutlineColor = Color3.new(1, 1, 1) -- Белая обводка
+                highlight.FillTransparency = 0.5
+                highlight.OutlineTransparency = 0
+                highlight.Parent = otherPlayer.Character
+                highlight.Adornee = otherPlayer.Character
+                highlights[otherPlayer] = highlight
+                
+                print("🔴 ESP added for: " .. otherPlayer.Name)
+            end
+        end
+        
+        -- Обработка новых игроков
+        Players.PlayerAdded:Connect(function(newPlayer)
+            if espEnabled then
+                newPlayer.CharacterAdded:Connect(function(character)
+                    wait(1)
+                    if espEnabled and character then
+                        local highlight = Instance.new("Highlight")
+                        highlight.FillColor = Color3.new(1, 0, 0)
+                        highlight.OutlineColor = Color3.new(1, 1, 1)
+                        highlight.FillTransparency = 0.5
+                        highlight.Parent = character
+                        highlight.Adornee = character
+                        highlights[newPlayer] = highlight
+                        print("🔴 ESP added for new player: " .. newPlayer.Name)
+                    end
+                end)
+            end
+        end)
+        
+    else
+        espBtn.Text = "ESP: OFF"
+        espBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        print("❌ ESP OFF")
+        
+        -- Выключить ESP
+        for _, highlight in pairs(highlights) do
+            if highlight then
+                highlight:Destroy()
+            end
+        end
+        highlights = {}
+    end
+end)
+
+-- 6. AIMBOT
+local aimbotBtn = createButton("AIMBOT: OFF", UDim2.new(0.05, 0, 0.65, 0))
+local aimbotConnection
+
+aimbotBtn.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    
+    if aimbotEnabled then
+        aimbotBtn.Text = "AIMBOT: ON"
+        aimbotBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        print("✅ Aimbot ON - Hold Right Mouse to aim")
+        
+        -- Функция для поиска ближайшего врага
+        local function getClosestEnemy()
+            local closestPlayer = nil
+            local closestDistance = math.huge
+            local localRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            
+            if not localRoot then return nil end
+            
+            for _, otherPlayer in pairs(Players:GetPlayers()) do
+                if otherPlayer ~= player and otherPlayer.Character then
+                    -- Проверка на тиммейтов
+                    local isTeammate = false
+                    
+                    if player.Team and otherPlayer.Team then
+                        if player.Team == otherPlayer.Team then
+                            isTeammate = true
+                        end
+                    end
+                    
+                    if not isTeammate then
+                        local targetRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        local humanoid = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
+                        
+                        if targetRoot and humanoid and humanoid.Health > 0 then
+                            local distance = (localRoot.Position - targetRoot.Position).Magnitude
+                            if distance < closestDistance then
+                                closestDistance = distance
+                                closestPlayer = otherPlayer
+                            end
+                        end
+                    end
+                end
+            end
+            
+            return closestPlayer
+        end
+        
+        -- Включить аимбот
+        aimbotConnection = RunService.Heartbeat:Connect(function()
+            if aimbotEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+                local closestEnemy = getClosestEnemy()
+                if closestEnemy and closestEnemy.Character then
+                    local targetRoot = closestEnemy.Character:FindFirstChild("HumanoidRootPart")
+                    local camera = workspace.CurrentCamera
+                    if targetRoot and camera then
+                        camera.CFrame = CFrame.new(camera.CFrame.Position, targetRoot.Position)
+                    end
+                end
+            end
+        end)
+        
+    else
+        aimbotBtn.Text = "AIMBOT: OFF"
+        aimbotBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        print("❌ Aimbot OFF")
+        
+        -- Выключить аимбот
+        if aimbotConnection then
+            aimbotConnection:Disconnect()
+        end
+    end
+end)
+
+-- Информация
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Parent = mainFrame
+infoLabel.BackgroundTransparency = 1
+infoLabel.Position = UDim2.new(0.05, 0, 0.85, 0)
+infoLabel.Size = UDim2.new(0.9, 0, 0, 40)
+infoLabel.Font = Enum.Font.SourceSans
+infoLabel.Text = "Insert: Show/Hide\nAimbot: Hold Right Mouse"
+infoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+infoLabel.TextSize = 10
+infoLabel.TextWrapped = true
+
 -- Горячие клавиши
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
@@ -208,13 +359,13 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Fixed Cheat Menu Loaded!")
-print("📝 Insert - Show/Hide, Delete - Close")
-print("🎮 Buttons should change color and text now!")
+print("✅ Complete Cheat Menu Loaded!")
+print("🎯 Aimbot: Hold Right Mouse Button")
+print("🔴 ESP: Red highlights around players")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "FIXED MENU LOADED",
-    Text = "Buttons change color when ON/OFF",
+    Title = "COMPLETE MENU LOADED",
+    Text = "Aimbot + ESP Added!",
     Duration = 5
 })

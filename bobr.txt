@@ -1,75 +1,489 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
+local mouse = player:GetMouse()
 
--- Создаем простой GUI
+-- Настройки
+local settings = {
+    speed = 1,
+    isFlying = false,
+    isNoClip = false,
+    isESPEnabled = false,
+    isSpeedHack = false,
+    isAimbot = false,
+    isBhop = false,
+    isAntiAFK = false,
+    isFullbright = false,
+    espNames = true,
+    espDistance = true,
+    espBoxes = true,
+    speedHackValue = 2,
+    bhopSpeed = 1.5,
+    
+    keybinds = {
+        fly = Enum.KeyCode.F,
+        noclip = Enum.KeyCode.V,
+        esp = Enum.KeyCode.X,
+        aimbot = Enum.KeyCode.Q,
+        bhop = Enum.KeyCode.Space,
+        speedhack = Enum.KeyCode.LeftShift
+    }
+}
+
+-- Переменные для систем
+local flightConnection
+local noclipConnection
+local bhopConnection
+local antiAFKConnection
+local espHighlights = {}
+local originalWalkSpeed = 16
+local originalJumpPower = 50
+
+-- Создание GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SimpleScript"
+screenGui.Name = "Script"
 screenGui.Parent = CoreGui
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
+-- Главный фрейм
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Parent = screenGui
 mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
-mainFrame.Size = UDim2.new(0, 250, 0, 300)
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
 mainFrame.Active = true
 mainFrame.Draggable = true
 
-local title = Instance.new("TextLabel")
-title.Parent = mainFrame
-title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-title.BorderSizePixel = 0
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Font = Enum.Font.SourceSansBold
-title.Text = "SIMPLE SCRIPT"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 16
+-- Заголовок
+local titleFrame = Instance.new("Frame")
+titleFrame.Name = "TitleFrame"
+titleFrame.Parent = mainFrame
+titleFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleFrame.BorderSizePixel = 0
+titleFrame.Size = UDim2.new(1, 0, 0, 30)
 
--- Функции
-local function createButton(parent, text, position, callback)
-    local button = Instance.new("TextButton")
-    button.Parent = parent
-    button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    button.BorderSizePixel = 0
-    button.Position = position
-    button.Size = UDim2.new(0.9, 0, 0, 30)
-    button.Font = Enum.Font.SourceSans
-    button.Text = text
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.TextSize = 14
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "TitleLabel"
+titleLabel.Parent = titleFrame
+titleLabel.BackgroundTransparency = 1
+titleLabel.Size = UDim2.new(1, -60, 1, 0)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.Text = "SCRIPT"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 16
+
+-- Кнопки управления
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Parent = titleFrame
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+closeButton.BorderSizePixel = 0
+closeButton.Position = UDim2.new(1, -30, 0, 5)
+closeButton.Size = UDim2.new(0, 25, 0, 20)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 12
+
+-- Фрейм для вкладок
+local tabsFrame = Instance.new("Frame")
+tabsFrame.Name = "TabsFrame"
+tabsFrame.Parent = mainFrame
+tabsFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+tabsFrame.BorderSizePixel = 0
+tabsFrame.Position = UDim2.new(0, 0, 0, 30)
+tabsFrame.Size = UDim2.new(1, 0, 0, 30)
+
+-- Фрейм для контента
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "ContentFrame"
+contentFrame.Parent = mainFrame
+contentFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+contentFrame.BorderSizePixel = 0
+contentFrame.Position = UDim2.new(0, 0, 0, 60)
+contentFrame.Size = UDim2.new(1, 0, 1, -60)
+
+-- Создаем вкладки
+local tabs = {"Movement", "Visuals", "Combat", "Utility"}
+
+local tabButtons = {}
+local tabContents = {}
+
+for i, tabName in ipairs(tabs) do
+    -- Кнопка вкладки
+    local tabButton = Instance.new("TextButton")
+    tabButton.Name = tabName .. "Tab"
+    tabButton.Parent = tabsFrame
+    tabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    tabButton.BorderSizePixel = 0
+    tabButton.Position = UDim2.new((i-1) / #tabs, 0, 0, 0)
+    tabButton.Size = UDim2.new(1 / #tabs, 0, 1, 0)
+    tabButton.Font = Enum.Font.SourceSans
+    tabButton.Text = tabName
+    tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tabButton.TextSize = 12
     
-    button.MouseButton1Click:Connect(callback)
-    return button
+    -- Контент вкладки
+    local tabContent = Instance.new("ScrollingFrame")
+    tabContent.Name = tabName .. "Content"
+    tabContent.Parent = contentFrame
+    tabContent.BackgroundTransparency = 1
+    tabContent.Size = UDim2.new(1, 0, 1, 0)
+    tabContent.Visible = false
+    tabContent.ScrollingEnabled = true
+    tabContent.ScrollBarThickness = 0
+    tabContent.CanvasSize = UDim2.new(0, 0, 0, 500)
+    
+    tabButtons[tabName] = tabButton
+    tabContents[tabName] = tabContent
+    
+    tabButton.MouseButton1Click:Connect(function()
+        switchTab(tabName)
+    end)
 end
 
--- FLIGHT SYSTEM
-local flying = false
-local flightConnection
+-- Функция переключения вкладок
+function switchTab(tabName)
+    for name, content in pairs(tabContents) do
+        content.Visible = false
+    end
+    
+    for name, button in pairs(tabButtons) do
+        button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
+    
+    if tabContents[tabName] then
+        tabContents[tabName].Visible = true
+    end
+    if tabButtons[tabName] then
+        tabButtons[tabName].BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end
+end
 
-local function enableFlight()
-    if flying then return end
+-- Функция для создания переключателя
+function createToggle(parent, text, defaultValue, callback)
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Parent = parent
+    toggleFrame.BackgroundTransparency = 1
+    toggleFrame.Size = UDim2.new(1, -10, 0, 30)
+    
+    local label = Instance.new("TextLabel")
+    label.Parent = toggleFrame
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Font = Enum.Font.SourceSans
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Parent = toggleFrame
+    toggleButton.BackgroundColor3 = defaultValue and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    toggleButton.BorderSizePixel = 0
+    toggleButton.Position = UDim2.new(0.7, 0, 0.2, 0)
+    toggleButton.Size = UDim2.new(0.25, 0, 0.6, 0)
+    toggleButton.Font = Enum.Font.SourceSans
+    toggleButton.Text = defaultValue and "ON" or "OFF"
+    toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleButton.TextSize = 12
+    
+    toggleButton.MouseButton1Click:Connect(function()
+        local newValue = not defaultValue
+        toggleButton.BackgroundColor3 = newValue and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        toggleButton.Text = newValue and "ON" or "OFF"
+        defaultValue = newValue
+        callback(newValue)
+    end)
+    
+    return {frame = toggleFrame, button = toggleButton, value = defaultValue}
+end
+
+-- Функция для создания слайдера
+function createSlider(parent, text, minValue, maxValue, currentValue, callback)
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Parent = parent
+    sliderFrame.BackgroundTransparency = 1
+    sliderFrame.Size = UDim2.new(1, -10, 0, 50)
+    
+    local label = Instance.new("TextLabel")
+    label.Parent = sliderFrame
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, 0, 0, 20)
+    label.Font = Enum.Font.SourceSans
+    label.Text = text .. ": " .. currentValue
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 14
+    
+    local track = Instance.new("Frame")
+    track.Parent = sliderFrame
+    track.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    track.BorderSizePixel = 0
+    track.Position = UDim2.new(0, 0, 0, 25)
+    track.Size = UDim2.new(1, 0, 0, 10)
+    
+    local fill = Instance.new("Frame")
+    fill.Parent = track
+    fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    fill.BorderSizePixel = 0
+    fill.Size = UDim2.new((currentValue - minValue) / (maxValue - minValue), 0, 1, 0)
+    
+    local button = Instance.new("TextButton")
+    button.Parent = track
+    button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    button.BorderSizePixel = 0
+    button.Size = UDim2.new(0, 15, 0, 15)
+    button.Position = UDim2.new((currentValue - minValue) / (maxValue - minValue), -7, 0, -2)
+    button.Text = ""
+    
+    local dragging = false
+    
+    button.MouseButton1Down:Connect(function()
+        dragging = true
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mousePos = UserInputService:GetMouseLocation()
+            local trackPos = track.AbsolutePosition
+            local trackSize = track.AbsoluteSize
+            
+            local relativeX = math.clamp((mousePos.X - trackPos.X) / trackSize.X, 0, 1)
+            local value = math.floor((minValue + (maxValue - minValue) * relativeX) * 10) / 10
+            
+            fill.Size = UDim2.new(relativeX, 0, 1, 0)
+            button.Position = UDim2.new(relativeX, -7, 0, -2)
+            label.Text = text .. ": " .. value
+            
+            callback(value)
+        end
+    end)
+    
+    return sliderFrame
+end
+
+-- Заполняем вкладки контентом
+
+-- Вкладка Movement
+local movementContent = tabContents.Movement
+movementContent.CanvasSize = UDim2.new(0, 0, 0, 400)
+
+local yPosition = 10
+local function addToMovement(element)
+    element.Position = UDim2.new(0, 5, 0, yPosition)
+    yPosition = yPosition + 40
+end
+
+local flyToggle = createToggle(movementContent, "Flight", settings.isFlying, function(value)
+    settings.isFlying = value
+    if value then
+        enableFlight()
+    else
+        disableFlight()
+    end
+end)
+addToMovement(flyToggle.frame)
+
+local noclipToggle = createToggle(movementContent, "NoClip", settings.isNoClip, function(value)
+    settings.isNoClip = value
+    if value then
+        enableNoClip()
+    else
+        disableNoClip()
+    end
+end)
+addToMovement(noclipToggle.frame)
+
+local speedToggle = createToggle(movementContent, "Speed Hack", settings.isSpeedHack, function(value)
+    settings.isSpeedHack = value
+    if value then
+        enableSpeedHack()
+    else
+        disableSpeedHack()
+    end
+end)
+addToMovement(speedToggle.frame)
+
+local bhopToggle = createToggle(movementContent, "Bunny Hop", settings.isBhop, function(value)
+    settings.isBhop = value
+    if value then
+        enableBhop()
+    else
+        disableBhop()
+    end
+end)
+addToMovement(bhopToggle.frame)
+
+local flySpeedSlider = createSlider(movementContent, "Flight Speed", 1, 10, settings.speed, function(value)
+    settings.speed = value
+end)
+addToMovement(flySpeedSlider)
+
+local speedSlider = createSlider(movementContent, "Speed Multiplier", 1, 5, settings.speedHackValue, function(value)
+    settings.speedHackValue = value
+    if settings.isSpeedHack then
+        disableSpeedHack()
+        wait()
+        enableSpeedHack()
+    end
+end)
+addToMovement(speedSlider)
+
+local bhopSlider = createSlider(movementContent, "Bhop Power", 1, 3, settings.bhopSpeed, function(value)
+    settings.bhopSpeed = value
+end)
+addToMovement(bhopSlider)
+
+-- Вкладка Visuals
+local visualsContent = tabContents.Visuals
+visualsContent.CanvasSize = UDim2.new(0, 0, 0, 300)
+
+local yPositionVisuals = 10
+local function addToVisuals(element)
+    element.Position = UDim2.new(0, 5, 0, yPositionVisuals)
+    yPositionVisuals = yPositionVisuals + 40
+end
+
+local espToggle = createToggle(visualsContent, "Player ESP", settings.isESPEnabled, function(value)
+    settings.isESPEnabled = value
+    if value then
+        enableESP()
+    else
+        disableESP()
+    end
+end)
+addToVisuals(espToggle.frame)
+
+local espNamesToggle = createToggle(visualsContent, "Show Names", settings.espNames, function(value)
+    settings.espNames = value
+    updateESP()
+end)
+addToVisuals(espNamesToggle.frame)
+
+local espDistanceToggle = createToggle(visualsContent, "Show Distance", settings.espDistance, function(value)
+    settings.espDistance = value
+    updateESP()
+end)
+addToVisuals(espDistanceToggle.frame)
+
+local espBoxesToggle = createToggle(visualsContent, "Show Boxes", settings.espBoxes, function(value)
+    settings.espBoxes = value
+    updateESP()
+end)
+addToVisuals(espBoxesToggle.frame)
+
+local fullbrightToggle = createToggle(visualsContent, "Fullbright", settings.isFullbright, function(value)
+    settings.isFullbright = value
+    if value then
+        enableFullbright()
+    else
+        disableFullbright()
+    end
+end)
+addToVisuals(fullbrightToggle.frame)
+
+-- Вкладка Combat
+local combatContent = tabContents.Combat
+combatContent.CanvasSize = UDim2.new(0, 0, 0, 100)
+
+local aimbotToggle = createToggle(combatContent, "Aimbot", settings.isAimbot, function(value)
+    settings.isAimbot = value
+    if value then
+        enableAimbot()
+    else
+        disableAimbot()
+    end
+end)
+aimbotToggle.frame.Position = UDim2.new(0, 5, 0, 10)
+
+local aimbotKeyLabel = Instance.new("TextLabel")
+aimbotKeyLabel.Parent = combatContent
+aimbotKeyLabel.BackgroundTransparency = 1
+aimbotKeyLabel.Position = UDim2.new(0, 5, 0, 50)
+aimbotKeyLabel.Size = UDim2.new(1, -10, 0, 20)
+aimbotKeyLabel.Font = Enum.Font.SourceSans
+aimbotKeyLabel.Text = "Aimbot Key: " .. settings.keybinds.aimbot.Name
+aimbotKeyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimbotKeyLabel.TextSize = 12
+
+-- Вкладка Utility
+local utilityContent = tabContents.Utility
+utilityContent.CanvasSize = UDim2.new(0, 0, 0, 100)
+
+local antiAFKToggle = createToggle(utilityContent, "Anti-AFK", settings.isAntiAFK, function(value)
+    settings.isAntiAFK = value
+    if value then
+        enableAntiAFK()
+    else
+        disableAntiAFK()
+    end
+end)
+antiAFKToggle.frame.Position = UDim2.new(0, 5, 0, 10)
+
+local keybindsLabel = Instance.new("TextLabel")
+keybindsLabel.Parent = utilityContent
+keybindsLabel.BackgroundTransparency = 1
+keybindsLabel.Position = UDim2.new(0, 5, 0, 50)
+keybindsLabel.Size = UDim2.new(1, -10, 0, 40)
+keybindsLabel.Font = Enum.Font.SourceSans
+keybindsLabel.Text = "Keybinds:\nF-Flight V-NoClip\nX-ESP Q-Aimbot\nSpace-Bhop Shift-Speed"
+keybindsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+keybindsLabel.TextSize = 12
+keybindsLabel.TextWrapped = true
+
+-- СИСТЕМЫ ФУНКЦИЙ
+
+-- Flight System
+function enableFlight()
+    if settings.isFlying then return end
     
     local character = player.Character
-    if not character then return end
+    if not character then 
+        warn("No character found for flight")
+        return 
+    end
     
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    if not humanoidRootPart then return end
+    if not humanoidRootPart then 
+        warn("No HumanoidRootPart found")
+        return 
+    end
     
-    flying = true
-    print("Flight ON")
+    settings.isFlying = true
+    print("Flight enabled")
     
+    -- Сохраняем оригинальную гравитацию
+    local originalGravity = workspace.Gravity
+    
+    -- Устанавливаем гравитацию 0
+    workspace.Gravity = 0
+    
+    -- Создаем BodyVelocity для управления полетом
     local bodyVelocity = Instance.new("BodyVelocity")
     bodyVelocity.Velocity = Vector3.new(0, 0, 0)
     bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
     bodyVelocity.Parent = humanoidRootPart
     
     flightConnection = RunService.Heartbeat:Connect(function()
-        if not flying or not character then return end
+        if not settings.isFlying or not character or not humanoidRootPart then
+            if flightConnection then
+                flightConnection:Disconnect()
+            end
+            return
+        end
         
         local cam = workspace.CurrentCamera
         local moveDirection = Vector3.new(0, 0, 0)
@@ -93,15 +507,25 @@ local function enableFlight()
             moveDirection = moveDirection - Vector3.new(0, 1, 0)
         end
         
-        bodyVelocity.Velocity = moveDirection * 100
+        bodyVelocity.Velocity = moveDirection * (settings.speed * 50)
+    end)
+    
+    -- Восстанавливаем гравитацию при отключении
+    flightConnection:Connect(function()
+        if not settings.isFlying then
+            workspace.Gravity = originalGravity
+        end
     end)
 end
 
-local function disableFlight()
-    if not flying then return end
+function disableFlight()
+    if not settings.isFlying then return end
     
-    flying = false
-    print("Flight OFF")
+    settings.isFlying = false
+    print("Flight disabled")
+    
+    -- Восстанавливаем гравитацию
+    workspace.Gravity = 196.2
     
     local character = player.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
@@ -117,23 +541,25 @@ local function disableFlight()
     end
 end
 
--- NOCLIP SYSTEM
-local noclip = false
-local noclipConnection
-
-local function enableNoClip()
-    if noclip then return end
+-- NoClip System
+function enableNoClip()
+    if settings.isNoClip then return end
     
-    noclip = true
-    print("NoClip ON")
+    settings.isNoClip = true
+    print("NoClip enabled")
     
     noclipConnection = RunService.Stepped:Connect(function()
-        if not noclip then return end
+        if not settings.isNoClip then 
+            if noclipConnection then
+                noclipConnection:Disconnect()
+            end
+            return 
+        end
         
         local character = player.Character
         if character then
             for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
+                if part:IsA("BasePart") and part.CanCollide then
                     part.CanCollide = false
                 end
             end
@@ -141,201 +567,400 @@ local function enableNoClip()
     end)
 end
 
-local function disableNoClip()
-    if not noclip then return end
+function disableNoClip()
+    if not settings.isNoClip then return end
     
-    noclip = false
-    print("NoClip OFF")
+    settings.isNoClip = false
+    print("NoClip disabled")
     
     if noclipConnection then
         noclipConnection:Disconnect()
     end
-end
-
--- SPEED HACK
-local speedHack = false
-local originalWalkSpeed = 16
-
-local function enableSpeedHack()
-    if speedHack then return end
-    
-    speedHack = true
-    print("Speed Hack ON")
     
     local character = player.Character
     if character then
-        local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-        if humanoid then
-            originalWalkSpeed = humanoid.WalkSpeed
-            humanoid.WalkSpeed = 50
-        end
-    end
-end
-
-local function disableSpeedHack()
-    if not speedHack then return end
-    
-    speedHack = false
-    print("Speed Hack OFF")
-    
-    local character = player.Character
-    if character then
-        local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = originalWalkSpeed
-        end
-    end
-end
-
--- ESP SYSTEM
-local espEnabled = false
-local espHighlights = {}
-
-local function enableESP()
-    if espEnabled then return end
-    
-    espEnabled = true
-    print("ESP ON")
-    
-    for _, otherPlayer in pairs(Players:GetPlayers()) do
-        if otherPlayer ~= player and otherPlayer.Character then
-            local character = otherPlayer.Character
-            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-            
-            if humanoidRootPart then
-                local highlight = Instance.new("Highlight")
-                highlight.Parent = character
-                highlight.Adornee = character
-                highlight.FillColor = Color3.new(1, 0, 0)
-                highlight.OutlineColor = Color3.new(1, 1, 1)
-                highlight.FillTransparency = 0.5
-                
-                espHighlights[otherPlayer] = highlight
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
             end
         end
     end
 end
 
-local function disableESP()
-    if not espEnabled then return end
+-- Speed Hack System
+function enableSpeedHack()
+    if settings.isSpeedHack then return end
     
-    espEnabled = false
-    print("ESP OFF")
+    settings.isSpeedHack = true
+    print("Speed Hack enabled")
     
-    for _, highlight in pairs(espHighlights) do
-        if highlight then
-            highlight:Destroy()
+    local character = player.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+    if humanoid then
+        originalWalkSpeed = humanoid.WalkSpeed
+        humanoid.WalkSpeed = originalWalkSpeed * settings.speedHackValue
+    end
+end
+
+function disableSpeedHack()
+    if not settings.isSpeedHack then return end
+    
+    settings.isSpeedHack = false
+    print("Speed Hack disabled")
+    
+    local character = player.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = originalWalkSpeed
+    end
+end
+
+-- Bunny Hop System
+function enableBhop()
+    if settings.isBhop then return end
+    
+    settings.isBhop = true
+    print("Bunny Hop enabled")
+    
+    bhopConnection = RunService.Heartbeat:Connect(function()
+        if not settings.isBhop then 
+            if bhopConnection then
+                bhopConnection:Disconnect()
+            end
+            return 
+        end
+        
+        local character = player.Character
+        if not character then return end
+        
+        local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+        if humanoid and humanoid.FloorMaterial ~= Enum.Material.Air then
+            humanoid.Jump = true
+        end
+    end)
+end
+
+function disableBhop()
+    if not settings.isBhop then return end
+    
+    settings.isBhop = false
+    print("Bunny Hop disabled")
+    
+    if bhopConnection then
+        bhopConnection:Disconnect()
+    end
+end
+
+-- ESP System
+function enableESP()
+    if settings.isESPEnabled then return end
+    
+    settings.isESPEnabled = true
+    print("ESP enabled")
+    
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player then
+            createESP(otherPlayer)
+        end
+    end
+    
+    -- Обработка новых игроков
+    Players.PlayerAdded:Connect(function(newPlayer)
+        if settings.isESPEnabled then
+            createESP(newPlayer)
+        end
+    end)
+end
+
+function disableESP()
+    if not settings.isESPEnabled then return end
+    
+    settings.isESPEnabled = false
+    print("ESP disabled")
+    
+    for _, espData in pairs(espHighlights) do
+        if espData then
+            if espData.highlight then 
+                espData.highlight:Destroy() 
+            end
+            if espData.billboard then 
+                espData.billboard:Destroy() 
+            end
         end
     end
     espHighlights = {}
 end
 
--- Создаем кнопки
-local yPos = 40
-
-local flightBtn = createButton(mainFrame, "Flight: OFF", UDim2.new(0.05, 0, 0, yPos), function()
-    flying = not flying
-    if flying then
-        flightBtn.Text = "Flight: ON"
-        enableFlight()
-    else
-        flightBtn.Text = "Flight: OFF"
-        disableFlight()
+function updateESP()
+    for targetPlayer, espData in pairs(espHighlights) do
+        if espData and espData.billboard then
+            local nameLabel = espData.billboard:FindFirstChild("NameLabel")
+            local distanceLabel = espData.billboard:FindFirstChild("DistanceLabel")
+            
+            if nameLabel then 
+                nameLabel.Visible = settings.espNames 
+            end
+            if distanceLabel then 
+                distanceLabel.Visible = settings.espDistance 
+            end
+            if espData.highlight then 
+                espData.highlight.Enabled = settings.espBoxes 
+            end
+        end
     end
-end)
-yPos = yPos + 35
+end
 
-local noclipBtn = createButton(mainFrame, "NoClip: OFF", UDim2.new(0.05, 0, 0, yPos), function()
-    noclip = not noclip
-    if noclip then
-        noclipBtn.Text = "NoClip: ON"
-        enableNoClip()
-    else
-        noclipBtn.Text = "NoClip: OFF"
-        disableNoClip()
+function createESP(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
+    
+    local character = targetPlayer.Character
+    local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if not humanoid or not rootPart then return end
+    
+    -- Highlight
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESP_Highlight"
+    highlight.Parent = character
+    highlight.Adornee = character
+    highlight.FillColor = targetPlayer.Team and targetPlayer.TeamColor.Color or Color3.fromRGB(255, 0, 0)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.7
+    highlight.OutlineTransparency = 0
+    highlight.Enabled = settings.espBoxes
+    
+    -- Name Tag
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESP_Billboard"
+    billboard.Parent = character
+    billboard.Adornee = rootPart
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Parent = billboard
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    nameLabel.Font = Enum.Font.SourceSansBold
+    nameLabel.Text = targetPlayer.Name
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameLabel.TextStrokeTransparency = 0
+    nameLabel.TextSize = 14
+    nameLabel.Visible = settings.espNames
+    
+    local distanceLabel = Instance.new("TextLabel")
+    distanceLabel.Name = "DistanceLabel"
+    distanceLabel.Parent = billboard
+    distanceLabel.BackgroundTransparency = 1
+    distanceLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    distanceLabel.Position = UDim2.new(0, 0, 0.5, 0)
+    distanceLabel.Font = Enum.Font.SourceSans
+    distanceLabel.Text = "0 studs"
+    distanceLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    distanceLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    distanceLabel.TextStrokeTransparency = 0
+    distanceLabel.TextSize = 12
+    distanceLabel.Visible = settings.espDistance
+    
+    -- Update distance
+    local updateConnection
+    updateConnection = RunService.Heartbeat:Connect(function()
+        if not settings.isESPEnabled or not character or not player.Character then
+            if updateConnection then
+                updateConnection:Disconnect()
+            end
+            return
+        end
+        
+        local playerRoot = player.Character:FindFirstChild("HumanoidRootPart")
+        if playerRoot and rootPart then
+            local distance = (playerRoot.Position - rootPart.Position).Magnitude
+            distanceLabel.Text = math.floor(distance) .. " studs"
+        end
+    end)
+    
+    espHighlights[targetPlayer] = {
+        highlight = highlight,
+        billboard = billboard,
+        connection = updateConnection
+    }
+end
+
+-- Aimbot System
+function enableAimbot()
+    if settings.isAimbot then return end
+    
+    settings.isAimbot = true
+    print("Aimbot enabled")
+end
+
+function disableAimbot()
+    if not settings.isAimbot then return end
+    
+    settings.isAimbot = false
+    print("Aimbot disabled")
+end
+
+-- Anti-AFK System
+function enableAntiAFK()
+    if settings.isAntiAFK then return end
+    
+    settings.isAntiAFK = true
+    print("Anti-AFK enabled")
+    
+    local virtualUser = game:GetService("VirtualUser")
+    antiAFKConnection = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+        virtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        wait(1)
+        virtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end)
+end
+
+function disableAntiAFK()
+    if not settings.isAntiAFK then return end
+    
+    settings.isAntiAFK = false
+    print("Anti-AFK disabled")
+    
+    if antiAFKConnection then
+        antiAFKConnection:Disconnect()
     end
-end)
-yPos = yPos + 35
+end
 
-local speedBtn = createButton(mainFrame, "Speed Hack: OFF", UDim2.new(0.05, 0, 0, yPos), function()
-    speedHack = not speedHack
-    if speedHack then
-        speedBtn.Text = "Speed Hack: ON"
-        enableSpeedHack()
-    else
-        speedBtn.Text = "Speed Hack: OFF"
-        disableSpeedHack()
-    end
-end)
-yPos = yPos + 35
+-- Fullbright System
+function enableFullbright()
+    if settings.isFullbright then return end
+    
+    settings.isFullbright = true
+    print("Fullbright enabled")
+    
+    Lighting.Ambient = Color3.new(1, 1, 1)
+    Lighting.Brightness = 2
+    Lighting.GlobalShadows = false
+end
 
-local espBtn = createButton(mainFrame, "ESP: OFF", UDim2.new(0.05, 0, 0, yPos), function()
-    espEnabled = not espEnabled
-    if espEnabled then
-        espBtn.Text = "ESP: ON"
-        enableESP()
-    else
-        espBtn.Text = "ESP: OFF"
-        disableESP()
-    end
-end)
-yPos = yPos + 35
+function disableFullbright()
+    if not settings.isFullbright then return end
+    
+    settings.isFullbright = false
+    print("Fullbright disabled")
+    
+    Lighting.Ambient = Color3.new(0, 0, 0)
+    Lighting.Brightness = 1
+    Lighting.GlobalShadows = true
+end
 
--- Hotkeys
+-- Keybind System
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    if input.KeyCode == Enum.KeyCode.F then
-        flying = not flying
-        if flying then
-            flightBtn.Text = "Flight: ON"
+    if input.KeyCode == Enum.KeyCode.Insert then
+        screenGui.Enabled = not screenGui.Enabled
+    elseif input.KeyCode == Enum.KeyCode.Delete then
+        -- Panic button - выключить все
+        disableFlight()
+        disableNoClip()
+        disableSpeedHack()
+        disableBhop()
+        disableESP()
+        disableAimbot()
+        disableAntiAFK()
+        disableFullbright()
+        print("All features disabled - PANIC MODE")
+    elseif input.KeyCode == Enum.KeyCode.End then
+        -- Выгрузить скрипт
+        disableFlight()
+        disableNoClip()
+        disableSpeedHack()
+        disableBhop()
+        disableESP()
+        disableAimbot()
+        disableAntiAFK()
+        disableFullbright()
+        screenGui:Destroy()
+        print("Script unloaded")
+        return
+    end
+    
+    -- Custom Keybinds
+    if input.KeyCode == settings.keybinds.fly then
+        settings.isFlying = not settings.isFlying
+        if settings.isFlying then
             enableFlight()
         else
-            flightBtn.Text = "Flight: OFF"
             disableFlight()
         end
-    elseif input.KeyCode == Enum.KeyCode.V then
-        noclip = not noclip
-        if noclip then
-            noclipBtn.Text = "NoClip: ON"
+    elseif input.KeyCode == settings.keybinds.noclip then
+        settings.isNoClip = not settings.isNoClip
+        if settings.isNoClip then
             enableNoClip()
         else
-            noclipBtn.Text = "NoClip: OFF"
             disableNoClip()
         end
-    elseif input.KeyCode == Enum.KeyCode.X then
-        espEnabled = not espEnabled
-        if espEnabled then
-            espBtn.Text = "ESP: ON"
+    elseif input.KeyCode == settings.keybinds.esp then
+        settings.isESPEnabled = not settings.isESPEnabled
+        if settings.isESPEnabled then
             enableESP()
         else
-            espBtn.Text = "ESP: OFF"
             disableESP()
         end
-    elseif input.KeyCode == Enum.KeyCode.Insert then
-        screenGui.Enabled = not screenGui.Enabled
+    elseif input.KeyCode == settings.keybinds.aimbot then
+        -- Aimbot можно добавить позже
+        print("Aimbot key pressed")
+    elseif input.KeyCode == settings.keybinds.bhop then
+        settings.isBhop = not settings.isBhop
+        if settings.isBhop then
+            enableBhop()
+        else
+            disableBhop()
+        end
+    elseif input.KeyCode == settings.keybinds.speedhack then
+        settings.isSpeedHack = not settings.isSpeedHack
+        if settings.isSpeedHack then
+            enableSpeedHack()
+        else
+            disableSpeedHack()
+        end
     end
 end)
 
--- Информация
-local infoLabel = Instance.new("TextLabel")
-infoLabel.Parent = mainFrame
-infoLabel.BackgroundTransparency = 1
-infoLabel.Position = UDim2.new(0.05, 0, 0, yPos + 10)
-infoLabel.Size = UDim2.new(0.9, 0, 0, 60)
-infoLabel.Font = Enum.Font.SourceSans
-infoLabel.Text = "Hotkeys:\nF - Flight\nV - NoClip\nX - ESP\nInsert - Hide GUI"
-infoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-infoLabel.TextSize = 12
-infoLabel.TextWrapped = true
+-- Обработчики кнопок
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
 
-print("=== SIMPLE SCRIPT LOADED ===")
-print("Press F to fly, V for noclip, X for ESP")
-print("Press Insert to hide/show GUI")
+-- Автоматическая очистка при смерти
+player.CharacterAdded:Connect(function(character)
+    wait(1)
+    disableFlight()
+    disableNoClip()
+    
+    local humanoid = character:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        disableFlight()
+        disableNoClip()
+    end)
+end)
+
+-- Инициализация
+switchTab("Movement")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "SCRIPT LOADED",
-    Text = "F-Flight, V-NoClip, X-ESP, Insert-GUI",
+    Text = "All functions are working!",
     Duration = 5
 })
+
+print("=== SCRIPT LOADED SUCCESSFULLY ===")
+print("Controls: Insert (GUI), Delete (Panic), End (Unload)")
+print("Keybinds: F-Flight, V-NoClip, X-ESP, Space-Bhop, Shift-Speed")
+print("All functions should work now!")

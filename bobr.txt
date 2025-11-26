@@ -31,7 +31,7 @@ title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 title.BorderSizePixel = 0
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Font = Enum.Font.SourceSansBold
-title.Text = "COMPLETE CHEATS v3.0"
+title.Text = "COMPLETE CHEATS v4.0"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 14
 
@@ -45,6 +45,7 @@ local aimbotEnabled = false
 local wallshootEnabled = false
 local fovEnabled = false
 local currentFov = 70
+local autoAimEnabled = false
 
 -- Функция для создания кнопок
 local function createButton(text, position)
@@ -343,8 +344,11 @@ fovResetBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 8. WALLSHOOT
+-- 8. WALLSHOOT (ИСПРАВЛЕННЫЙ)
 local wallshootBtn = createButton("WALLSHOOT: OFF", UDim2.new(0.05, 0, 0.52, 0))
+local originalRaycast
+local wallshootConnection
+
 wallshootBtn.MouseButton1Click:Connect(function()
     wallshootEnabled = not wallshootEnabled
     
@@ -353,72 +357,87 @@ wallshootBtn.MouseButton1Click:Connect(function()
         wallshootBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
         print("✅ Wallshoot ON - Shooting through walls enabled")
         
-        -- Функция для стрельбы через стены
-        local function setupWallshoot()
-            -- Получаем оружие игрока
-            local character = player.Character
-            if not character then return end
+        -- Сохраняем оригинальный Raycast
+        originalRaycast = workspace.FindPartOnRayWithIgnoreList
+        
+        -- Переопределяем Raycast для игнорирования стен
+        workspace.FindPartOnRayWithIgnoreList = function(workspace, ray, ignoreList, ...)
+            local newIgnoreList = {}
             
-            -- Ищем инструменты/оружие
-            for _, tool in pairs(character:GetChildren()) do
-                if tool:IsA("Tool") then
-                    -- Перехватываем события стрельбы
-                    local toolScript = tool:FindFirstChildOfClass("LocalScript")
-                    if toolScript then
-                        -- Здесь должна быть логика модификации оружия для стрельбы через стены
-                        -- Это зависит от конкретной игры
-                        print("🔫 Tool found: " .. tool.Name)
+            -- Копируем оригинальный ignoreList
+            if ignoreList then
+                for _, item in ipairs(ignoreList) do
+                    table.insert(newIgnoreList, item)
+                end
+            end
+            
+            -- Добавляем все стены и препятствия в ignoreList
+            for _, part in ipairs(Workspace:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    -- Игнорируем стены, пол, потолок и другие препятствия
+                    if part.Name:lower():find("wall") or 
+                       part.Name:lower():find("part") or 
+                       part.Name:lower():find("floor") or 
+                       part.Name:lower():find("ceiling") or
+                       part.Name:lower():find("barrier") or
+                       part.Name:lower():find("obstacle") then
+                        table.insert(newIgnoreList, part)
                     end
                 end
             end
             
-            -- Альтернативный метод: изменяем Raycast параметры
-            local function modifyRaycasts()
-                -- Этот метод работает для игр, использующих Raycast для определения попаданий
-                local oldNamecall
-                oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-                    local method = getnamecallmethod()
-                    local args = {...}
-                    
-                    if wallshootEnabled and method == "FindPartOnRayWithIgnoreList" then
-                        -- Изменяем Raycast чтобы игнорировать все стены
-                        local originalIgnoreList = args[2] or {}
-                        local newIgnoreList = {}
-                        
-                        -- Добавляем все стены в игнор лист
-                        for _, part in pairs(Workspace:GetDescendants()) do
-                            if part:IsA("BasePart") and part.Name:lower():find("wall") or part.Name:lower():find("part") then
-                                table.insert(newIgnoreList, part)
-                            end
+            -- Добавляем все части карты
+            for _, part in ipairs(Workspace:GetChildren()) do
+                if part:IsA("Model") and part.Name:lower():find("map") then
+                    for _, child in ipairs(part:GetDescendants()) do
+                        if child:IsA("BasePart") then
+                            table.insert(newIgnoreList, child)
                         end
-                        
-                        -- Объединяем списки
-                        for _, item in pairs(originalIgnoreList) do
-                            table.insert(newIgnoreList, item)
-                        end
-                        
-                        args[2] = newIgnoreList
-                        return oldNamecall(self, unpack(args))
                     end
-                    
-                    return oldNamecall(self, ...)
-                end)
+                end
             end
             
-            -- Пытаемся модифицировать Raycast систему
-            pcall(modifyRaycasts)
+            return originalRaycast(workspace, ray, newIgnoreList, ...)
         end
         
-        setupWallshoot()
+        -- Альтернативный метод через изменение Raycast параметров
+        wallshootConnection = RunService.Heartbeat:Connect(function()
+            if wallshootEnabled then
+                -- Автоматически находим и изменяем оружие
+                local character = player.Character
+                if character then
+                    for _, tool in ipairs(character:GetChildren()) do
+                        if tool:IsA("Tool") then
+                            -- Изменяем параметры инструмента для стрельбы через стены
+                            local handle = tool:FindFirstChild("Handle")
+                            if handle then
+                                handle.CanCollide = false
+                            end
+                        end
+                    end
+                end
+            end
+        end)
         
     else
         wallshootBtn.Text = "WALLSHOOT: OFF"
         wallshootBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         print("❌ Wallshoot OFF")
+        
+        -- Восстанавливаем оригинальный Raycast
+        if originalRaycast then
+            workspace.FindPartOnRayWithIgnoreList = originalRaycast
+        end
+        
+        -- Отключаем соединение
+        if wallshootConnection then
+            wallshootConnection:Disconnect()
+            wallshootConnection = nil
+        end
     end
 end)
 
--- 9. AIMBOT
+-- 9. AIMBOT (АВТОМАТИЧЕСКИЙ БЕЗ ПКМ)
 local aimbotBtn = createButton("AIMBOT: OFF", UDim2.new(0.05, 0, 0.58, 0))
 local aimbotConnection
 local fovCircle = nil
@@ -454,70 +473,70 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- Функция для поиска ближайшего врага
+local function getClosestEnemy()
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    local localRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    local camera = workspace.CurrentCamera
+    
+    if not localRoot or not camera then return nil end
+    
+    local mousePos = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+    
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            -- Проверка на тиммейтов
+            local isTeammate = false
+            
+            if player.Team and otherPlayer.Team then
+                if player.Team == otherPlayer.Team then
+                    isTeammate = true
+                end
+            end
+            
+            if not isTeammate then
+                local targetRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+                local humanoid = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
+                
+                if targetRoot and humanoid and humanoid.Health > 0 then
+                    -- Конвертируем мировую позицию в экранную
+                    local screenPoint, onScreen = camera:WorldToViewportPoint(targetRoot.Position)
+                    
+                    if onScreen then
+                        local screenPos = Vector2.new(screenPoint.X, screenPoint.Y)
+                        local distance = (mousePos - screenPos).Magnitude
+                        
+                        -- Проверяем находится ли враг в FOV
+                        if distance <= aimbotFov and distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = otherPlayer
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    return closestPlayer
+end
+
 aimbotBtn.MouseButton1Click:Connect(function()
     aimbotEnabled = not aimbotEnabled
     
     if aimbotEnabled then
         aimbotBtn.Text = "AIMBOT: ON"
         aimbotBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        print("✅ Aimbot ON - Hold Right Mouse to aim")
+        print("✅ Aimbot ON - Auto aiming enabled")
         
         -- Создаем FOV круг
         createFovCircle()
         fovCircle.Visible = true
         
-        -- Функция для поиска врага в FOV
-        local function getClosestEnemyInFov()
-            local closestPlayer = nil
-            local closestDistance = math.huge
-            local localRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            local camera = workspace.CurrentCamera
-            
-            if not localRoot or not camera then return nil end
-            
-            local mousePos = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
-            
-            for _, otherPlayer in pairs(Players:GetPlayers()) do
-                if otherPlayer ~= player and otherPlayer.Character then
-                    -- Проверка на тиммейтов
-                    local isTeammate = false
-                    
-                    if player.Team and otherPlayer.Team then
-                        if player.Team == otherPlayer.Team then
-                            isTeammate = true
-                        end
-                    end
-                    
-                    if not isTeammate then
-                        local targetRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        local humanoid = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
-                        
-                        if targetRoot and humanoid and humanoid.Health > 0 then
-                            -- Конвертируем мировую позицию в экранную
-                            local screenPoint, onScreen = camera:WorldToViewportPoint(targetRoot.Position)
-                            
-                            if onScreen then
-                                local screenPos = Vector2.new(screenPoint.X, screenPoint.Y)
-                                local distance = (mousePos - screenPos).Magnitude
-                                
-                                -- Проверяем находится ли враг в FOV
-                                if distance <= aimbotFov and distance < closestDistance then
-                                    closestDistance = distance
-                                    closestPlayer = otherPlayer
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-            
-            return closestPlayer
-        end
-        
-        -- Включить аимбот
+        -- Включить автоматический аимбот
         aimbotConnection = RunService.Heartbeat:Connect(function()
-            if aimbotEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-                local closestEnemy = getClosestEnemyInFov()
+            if aimbotEnabled then
+                local closestEnemy = getClosestEnemy()
                 if closestEnemy and closestEnemy.Character then
                     local targetRoot = closestEnemy.Character:FindFirstChild("HumanoidRootPart")
                     local camera = workspace.CurrentCamera
@@ -525,7 +544,7 @@ aimbotBtn.MouseButton1Click:Connect(function()
                         -- Плавный аимбот
                         local currentCFrame = camera.CFrame
                         local targetCFrame = CFrame.new(camera.CFrame.Position, targetRoot.Position)
-                        camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.7)
+                        camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.8)
                     end
                 end
             end
@@ -563,13 +582,54 @@ fovAimBtn.MouseButton1Click:Connect(function()
     print("🎯 Aimbot FOV set to: " .. aimbotFov)
 end)
 
+-- 11. MANUAL AIM (РУЧНОЕ ПРИЦЕЛИВАНИЕ)
+local manualAimBtn = createButton("MANUAL AIM: OFF", UDim2.new(0.05, 0, 0.70, 0))
+local manualAimConnection
+
+manualAimBtn.MouseButton1Click:Connect(function()
+    autoAimEnabled = not autoAimEnabled
+    
+    if autoAimEnabled then
+        manualAimBtn.Text = "MANUAL AIM: ON"
+        manualAimBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        print("✅ Manual Aim ON - Press F to aim at closest enemy")
+        
+        -- Ручное прицеливание по нажатию F
+        manualAimConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+            if gameProcessed then return end
+            
+            if input.KeyCode == Enum.KeyCode.F and autoAimEnabled then
+                local closestEnemy = getClosestEnemy()
+                if closestEnemy and closestEnemy.Character then
+                    local targetRoot = closestEnemy.Character:FindFirstChild("HumanoidRootPart")
+                    local camera = workspace.CurrentCamera
+                    if targetRoot and camera then
+                        -- Мгновенное прицеливание
+                        camera.CFrame = CFrame.new(camera.CFrame.Position, targetRoot.Position)
+                        print("🎯 Manual aim at: " .. closestEnemy.Name)
+                    end
+                end
+            end
+        end)
+        
+    else
+        manualAimBtn.Text = "MANUAL AIM: OFF"
+        manualAimBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        print("❌ Manual Aim OFF")
+        
+        -- Выключить ручное прицеливание
+        if manualAimConnection then
+            manualAimConnection:Disconnect()
+        end
+    end
+end)
+
 -- Информация
-local infoLabel = createLabel("Controls:", UDim2.new(0.05, 0, 0.75, 0))
-local infoLabel2 = createLabel("Insert: Show/Hide Menu", UDim2.new(0.05, 0, 0.78, 0))
-local infoLabel3 = createLabel("Delete: Destroy Menu", UDim2.new(0.05, 0, 0.81, 0))
-local infoLabel4 = createLabel("Aimbot: Hold Right Mouse", UDim2.new(0.05, 0, 0.84, 0))
-local infoLabel5 = createLabel("Wallshoot: Shoot through walls", UDim2.new(0.05, 0, 0.87, 0))
-local infoLabel6 = createLabel("FOV Reset: Reset to default", UDim2.new(0.05, 0, 0.90, 0))
+local infoLabel = createLabel("Controls:", UDim2.new(0.05, 0, 0.80, 0))
+local infoLabel2 = createLabel("Insert: Show/Hide Menu", UDim2.new(0.05, 0, 0.83, 0))
+local infoLabel3 = createLabel("Delete: Destroy Menu", UDim2.new(0.05, 0, 0.86, 0))
+local infoLabel4 = createLabel("F: Manual Aim (when ON)", UDim2.new(0.05, 0, 0.89, 0))
+local infoLabel5 = createLabel("Aimbot: Auto through menu", UDim2.new(0.05, 0, 0.92, 0))
 
 -- Горячие клавиши
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -596,16 +656,17 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Complete Cheat Menu v3.0 Loaded!")
-print("🎯 Aimbot: Hold Right Mouse Button (with FOV)")
-print("🔫 Wallshoot: Shooting through walls")
+print("✅ Complete Cheat Menu v4.0 Loaded!")
+print("🎯 Aimbot: Automatic through menu (no RMB needed)")
+print("🔫 Wallshoot: Fixed shooting through walls")
 print("🔄 FOV Reset: Reset to default FOV")
-print("🔴 ESP: Team-based colors (Red=Enemy, Blue=Team)")
+print("🔴 ESP: Team-based colors")
 print("👁️ FOV Changer: Increased field of view")
+print("🎯 Manual Aim: Press F to aim")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "COMPLETE MENU v3.0 LOADED",
-    Text = "Wallshoot + FOV Reset Added!",
+    Title = "COMPLETE MENU v4.0 LOADED",
+    Text = "Fixed Wallshoot + Menu Aimbot!",
     Duration = 5
 })

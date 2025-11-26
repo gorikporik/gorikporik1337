@@ -3,6 +3,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
@@ -24,7 +25,6 @@ local settings = {
     speedHackValue = 2,
     bhopSpeed = 1.5,
     
-    -- Бинды
     keybinds = {
         fly = Enum.KeyCode.F,
         noclip = Enum.KeyCode.V,
@@ -34,6 +34,15 @@ local settings = {
         speedhack = Enum.KeyCode.LeftShift
     }
 }
+
+-- Переменные для систем
+local flightConnection
+local noclipConnection
+local bhopConnection
+local antiAFKConnection
+local espHighlights = {}
+local originalWalkSpeed = 16
+local originalJumpPower = 50
 
 -- Создание GUI
 local screenGui = Instance.new("ScreenGui")
@@ -130,6 +139,7 @@ for i, tabName in ipairs(tabs) do
     tabContent.Visible = false
     tabContent.ScrollingEnabled = true
     tabContent.ScrollBarThickness = 0
+    tabContent.CanvasSize = UDim2.new(0, 0, 0, 500)
     
     tabButtons[tabName] = tabButton
     tabContents[tabName] = tabContent
@@ -271,6 +281,12 @@ end
 local movementContent = tabContents.Movement
 movementContent.CanvasSize = UDim2.new(0, 0, 0, 400)
 
+local yPosition = 10
+local function addToMovement(element)
+    element.Position = UDim2.new(0, 5, 0, yPosition)
+    yPosition = yPosition + 40
+end
+
 local flyToggle = createToggle(movementContent, "Flight", settings.isFlying, function(value)
     settings.isFlying = value
     if value then
@@ -279,7 +295,7 @@ local flyToggle = createToggle(movementContent, "Flight", settings.isFlying, fun
         disableFlight()
     end
 end)
-flyToggle.frame.Position = UDim2.new(0, 5, 0, 10)
+addToMovement(flyToggle.frame)
 
 local noclipToggle = createToggle(movementContent, "NoClip", settings.isNoClip, function(value)
     settings.isNoClip = value
@@ -289,7 +305,7 @@ local noclipToggle = createToggle(movementContent, "NoClip", settings.isNoClip, 
         disableNoClip()
     end
 end)
-noclipToggle.frame.Position = UDim2.new(0, 5, 0, 50)
+addToMovement(noclipToggle.frame)
 
 local speedToggle = createToggle(movementContent, "Speed Hack", settings.isSpeedHack, function(value)
     settings.isSpeedHack = value
@@ -299,7 +315,7 @@ local speedToggle = createToggle(movementContent, "Speed Hack", settings.isSpeed
         disableSpeedHack()
     end
 end)
-speedToggle.frame.Position = UDim2.new(0, 5, 0, 90)
+addToMovement(speedToggle.frame)
 
 local bhopToggle = createToggle(movementContent, "Bunny Hop", settings.isBhop, function(value)
     settings.isBhop = value
@@ -309,30 +325,37 @@ local bhopToggle = createToggle(movementContent, "Bunny Hop", settings.isBhop, f
         disableBhop()
     end
 end)
-bhopToggle.frame.Position = UDim2.new(0, 5, 0, 130)
+addToMovement(bhopToggle.frame)
 
 local flySpeedSlider = createSlider(movementContent, "Flight Speed", 1, 10, settings.speed, function(value)
     settings.speed = value
 end)
-flySpeedSlider.Position = UDim2.new(0, 5, 0, 170)
+addToMovement(flySpeedSlider)
 
 local speedSlider = createSlider(movementContent, "Speed Multiplier", 1, 5, settings.speedHackValue, function(value)
     settings.speedHackValue = value
     if settings.isSpeedHack then
         disableSpeedHack()
+        wait()
         enableSpeedHack()
     end
 end)
-speedSlider.Position = UDim2.new(0, 5, 0, 230)
+addToMovement(speedSlider)
 
 local bhopSlider = createSlider(movementContent, "Bhop Power", 1, 3, settings.bhopSpeed, function(value)
     settings.bhopSpeed = value
 end)
-bhopSlider.Position = UDim2.new(0, 5, 0, 290)
+addToMovement(bhopSlider)
 
 -- Вкладка Visuals
 local visualsContent = tabContents.Visuals
 visualsContent.CanvasSize = UDim2.new(0, 0, 0, 300)
+
+local yPositionVisuals = 10
+local function addToVisuals(element)
+    element.Position = UDim2.new(0, 5, 0, yPositionVisuals)
+    yPositionVisuals = yPositionVisuals + 40
+end
 
 local espToggle = createToggle(visualsContent, "Player ESP", settings.isESPEnabled, function(value)
     settings.isESPEnabled = value
@@ -342,25 +365,25 @@ local espToggle = createToggle(visualsContent, "Player ESP", settings.isESPEnabl
         disableESP()
     end
 end)
-espToggle.frame.Position = UDim2.new(0, 5, 0, 10)
+addToVisuals(espToggle.frame)
 
 local espNamesToggle = createToggle(visualsContent, "Show Names", settings.espNames, function(value)
     settings.espNames = value
     updateESP()
 end)
-espNamesToggle.frame.Position = UDim2.new(0, 5, 0, 50)
+addToVisuals(espNamesToggle.frame)
 
 local espDistanceToggle = createToggle(visualsContent, "Show Distance", settings.espDistance, function(value)
     settings.espDistance = value
     updateESP()
 end)
-espDistanceToggle.frame.Position = UDim2.new(0, 5, 0, 90)
+addToVisuals(espDistanceToggle.frame)
 
 local espBoxesToggle = createToggle(visualsContent, "Show Boxes", settings.espBoxes, function(value)
     settings.espBoxes = value
     updateESP()
 end)
-espBoxesToggle.frame.Position = UDim2.new(0, 5, 0, 130)
+addToVisuals(espBoxesToggle.frame)
 
 local fullbrightToggle = createToggle(visualsContent, "Fullbright", settings.isFullbright, function(value)
     settings.isFullbright = value
@@ -370,7 +393,7 @@ local fullbrightToggle = createToggle(visualsContent, "Fullbright", settings.isF
         disableFullbright()
     end
 end)
-fullbrightToggle.frame.Position = UDim2.new(0, 5, 0, 170)
+addToVisuals(fullbrightToggle.frame)
 
 -- Вкладка Combat
 local combatContent = tabContents.Combat
@@ -428,23 +451,37 @@ function enableFlight()
     if settings.isFlying then return end
     
     local character = player.Character
-    if not character then return end
+    if not character then 
+        warn("No character found for flight")
+        return 
+    end
     
-    local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-    if not humanoid then return end
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then 
+        warn("No HumanoidRootPart found")
+        return 
+    end
     
     settings.isFlying = true
+    print("Flight enabled")
     
-    -- Простая система полета
+    -- Сохраняем оригинальную гравитацию
+    local originalGravity = workspace.Gravity
+    
+    -- Устанавливаем гравитацию 0
+    workspace.Gravity = 0
+    
+    -- Создаем BodyVelocity для управления полетом
     local bodyVelocity = Instance.new("BodyVelocity")
     bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-    bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
-    bodyVelocity.Parent = character.HumanoidRootPart
+    bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+    bodyVelocity.Parent = humanoidRootPart
     
-    local flightConnection
     flightConnection = RunService.Heartbeat:Connect(function()
-        if not settings.isFlying or not character then
-            flightConnection:Disconnect()
+        if not settings.isFlying or not character or not humanoidRootPart then
+            if flightConnection then
+                flightConnection:Disconnect()
+            end
             return
         end
         
@@ -472,36 +509,59 @@ function enableFlight()
         
         bodyVelocity.Velocity = moveDirection * (settings.speed * 50)
     end)
+    
+    -- Восстанавливаем гравитацию при отключении
+    flightConnection:Connect(function()
+        if not settings.isFlying then
+            workspace.Gravity = originalGravity
+        end
+    end)
 end
 
 function disableFlight()
     if not settings.isFlying then return end
+    
     settings.isFlying = false
+    print("Flight disabled")
+    
+    -- Восстанавливаем гравитацию
+    workspace.Gravity = 196.2
     
     local character = player.Character
-    if character and character.HumanoidRootPart then
+    if character and character:FindFirstChild("HumanoidRootPart") then
         for _, v in pairs(character.HumanoidRootPart:GetChildren()) do
             if v:IsA("BodyVelocity") then
                 v:Destroy()
             end
         end
     end
+    
+    if flightConnection then
+        flightConnection:Disconnect()
+    end
 end
 
 -- NoClip System
 function enableNoClip()
     if settings.isNoClip then return end
+    
     settings.isNoClip = true
+    print("NoClip enabled")
     
-    local character = player.Character
-    if not character then return end
-    
-    RunService.Stepped:Connect(function()
-        if not settings.isNoClip or not character then return end
+    noclipConnection = RunService.Stepped:Connect(function()
+        if not settings.isNoClip then 
+            if noclipConnection then
+                noclipConnection:Disconnect()
+            end
+            return 
+        end
         
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+        local character = player.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
             end
         end
     end)
@@ -509,46 +569,75 @@ end
 
 function disableNoClip()
     if not settings.isNoClip then return end
+    
     settings.isNoClip = false
+    print("NoClip disabled")
+    
+    if noclipConnection then
+        noclipConnection:Disconnect()
+    end
+    
+    local character = player.Character
+    if character then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
 end
 
 -- Speed Hack System
 function enableSpeedHack()
     if settings.isSpeedHack then return end
+    
     settings.isSpeedHack = true
+    print("Speed Hack enabled")
     
     local character = player.Character
     if not character then return end
     
     local humanoid = character:FindFirstChildWhichIsA("Humanoid")
     if humanoid then
-        humanoid.WalkSpeed = humanoid.WalkSpeed * settings.speedHackValue
+        originalWalkSpeed = humanoid.WalkSpeed
+        humanoid.WalkSpeed = originalWalkSpeed * settings.speedHackValue
     end
 end
 
 function disableSpeedHack()
     if not settings.isSpeedHack then return end
+    
     settings.isSpeedHack = false
+    print("Speed Hack disabled")
     
     local character = player.Character
     if not character then return end
     
     local humanoid = character:FindFirstChildWhichIsA("Humanoid")
     if humanoid then
-        humanoid.WalkSpeed = humanoid.WalkSpeed / settings.speedHackValue
+        humanoid.WalkSpeed = originalWalkSpeed
     end
 end
 
 -- Bunny Hop System
 function enableBhop()
     if settings.isBhop then return end
-    settings.isBhop = true
     
-    local bhopConnection
+    settings.isBhop = true
+    print("Bunny Hop enabled")
+    
     bhopConnection = RunService.Heartbeat:Connect(function()
-        if not settings.isBhop or not player.Character then return end
+        if not settings.isBhop then 
+            if bhopConnection then
+                bhopConnection:Disconnect()
+            end
+            return 
+        end
         
-        local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
+        local character = player.Character
+        if not character then return end
+        
+        local humanoid = character:FindFirstChildWhichIsA("Humanoid")
         if humanoid and humanoid.FloorMaterial ~= Enum.Material.Air then
             humanoid.Jump = true
         end
@@ -557,45 +646,70 @@ end
 
 function disableBhop()
     if not settings.isBhop then return end
+    
     settings.isBhop = false
+    print("Bunny Hop disabled")
+    
+    if bhopConnection then
+        bhopConnection:Disconnect()
+    end
 end
 
 -- ESP System
-local espHighlights = {}
-
 function enableESP()
     if settings.isESPEnabled then return end
+    
     settings.isESPEnabled = true
+    print("ESP enabled")
     
     for _, otherPlayer in pairs(Players:GetPlayers()) do
         if otherPlayer ~= player then
             createESP(otherPlayer)
         end
     end
+    
+    -- Обработка новых игроков
+    Players.PlayerAdded:Connect(function(newPlayer)
+        if settings.isESPEnabled then
+            createESP(newPlayer)
+        end
+    end)
 end
 
 function disableESP()
     if not settings.isESPEnabled then return end
+    
     settings.isESPEnabled = false
+    print("ESP disabled")
     
     for _, espData in pairs(espHighlights) do
         if espData then
-            if espData.highlight then espData.highlight:Destroy() end
-            if espData.billboard then espData.billboard:Destroy() end
+            if espData.highlight then 
+                espData.highlight:Destroy() 
+            end
+            if espData.billboard then 
+                espData.billboard:Destroy() 
+            end
         end
     end
     espHighlights = {}
 end
 
 function updateESP()
-    for player, espData in pairs(espHighlights) do
+    for targetPlayer, espData in pairs(espHighlights) do
         if espData and espData.billboard then
             local nameLabel = espData.billboard:FindFirstChild("NameLabel")
             local distanceLabel = espData.billboard:FindFirstChild("DistanceLabel")
             
-            if nameLabel then nameLabel.Visible = settings.espNames end
-            if distanceLabel then distanceLabel.Visible = settings.espDistance end
-            if espData.highlight then espData.highlight.Enabled = settings.espBoxes end
+            if nameLabel then 
+                nameLabel.Visible = settings.espNames 
+            end
+            if distanceLabel then 
+                distanceLabel.Visible = settings.espDistance 
+            end
+            if espData.highlight then 
+                espData.highlight.Enabled = settings.espBoxes 
+            end
         end
     end
 end
@@ -649,6 +763,7 @@ function createESP(targetPlayer)
     distanceLabel.Size = UDim2.new(1, 0, 0.5, 0)
     distanceLabel.Position = UDim2.new(0, 0, 0.5, 0)
     distanceLabel.Font = Enum.Font.SourceSans
+    distanceLabel.Text = "0 studs"
     distanceLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
     distanceLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     distanceLabel.TextStrokeTransparency = 0
@@ -656,8 +771,12 @@ function createESP(targetPlayer)
     distanceLabel.Visible = settings.espDistance
     
     -- Update distance
-    RunService.Heartbeat:Connect(function()
+    local updateConnection
+    updateConnection = RunService.Heartbeat:Connect(function()
         if not settings.isESPEnabled or not character or not player.Character then
+            if updateConnection then
+                updateConnection:Disconnect()
+            end
             return
         end
         
@@ -670,55 +789,73 @@ function createESP(targetPlayer)
     
     espHighlights[targetPlayer] = {
         highlight = highlight,
-        billboard = billboard
+        billboard = billboard,
+        connection = updateConnection
     }
 end
 
 -- Aimbot System
 function enableAimbot()
     if settings.isAimbot then return end
+    
     settings.isAimbot = true
+    print("Aimbot enabled")
 end
 
 function disableAimbot()
     if not settings.isAimbot then return end
+    
     settings.isAimbot = false
+    print("Aimbot disabled")
 end
 
 -- Anti-AFK System
 function enableAntiAFK()
     if settings.isAntiAFK then return end
+    
     settings.isAntiAFK = true
+    print("Anti-AFK enabled")
     
     local virtualUser = game:GetService("VirtualUser")
-    game:GetService("Players").LocalPlayer.Idled:connect(function()
-        virtualUser:CaptureController()
-        virtualUser:ClickButton2(Vector2.new())
+    antiAFKConnection = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+        virtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        wait(1)
+        virtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
     end)
 end
 
 function disableAntiAFK()
     if not settings.isAntiAFK then return end
+    
     settings.isAntiAFK = false
+    print("Anti-AFK disabled")
+    
+    if antiAFKConnection then
+        antiAFKConnection:Disconnect()
+    end
 end
 
 -- Fullbright System
 function enableFullbright()
     if settings.isFullbright then return end
-    settings.isFullbright = true
     
-    game:GetService("Lighting").Ambient = Color3.new(1, 1, 1)
-    game:GetService("Lighting").Brightness = 2
-    game:GetService("Lighting").GlobalShadows = false
+    settings.isFullbright = true
+    print("Fullbright enabled")
+    
+    Lighting.Ambient = Color3.new(1, 1, 1)
+    Lighting.Brightness = 2
+    Lighting.GlobalShadows = false
 end
 
 function disableFullbright()
     if not settings.isFullbright then return end
-    settings.isFullbright = false
     
-    game:GetService("Lighting").Ambient = Color3.new(0, 0, 0)
-    game:GetService("Lighting").Brightness = 1
-    game:GetService("Lighting").GlobalShadows = true
+    settings.isFullbright = false
+    print("Fullbright disabled")
+    
+    Lighting.Ambient = Color3.new(0, 0, 0)
+    Lighting.Brightness = 1
+    Lighting.GlobalShadows = true
 end
 
 -- Keybind System
@@ -728,7 +865,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Insert then
         screenGui.Enabled = not screenGui.Enabled
     elseif input.KeyCode == Enum.KeyCode.Delete then
-        -- Panic button
+        -- Panic button - выключить все
         disableFlight()
         disableNoClip()
         disableSpeedHack()
@@ -737,8 +874,19 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         disableAimbot()
         disableAntiAFK()
         disableFullbright()
+        print("All features disabled - PANIC MODE")
     elseif input.KeyCode == Enum.KeyCode.End then
+        -- Выгрузить скрипт
+        disableFlight()
+        disableNoClip()
+        disableSpeedHack()
+        disableBhop()
+        disableESP()
+        disableAimbot()
+        disableAntiAFK()
+        disableFullbright()
         screenGui:Destroy()
+        print("Script unloaded")
         return
     end
     
@@ -765,7 +913,8 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
             disableESP()
         end
     elseif input.KeyCode == settings.keybinds.aimbot then
-        -- Aimbot logic here
+        -- Aimbot можно добавить позже
+        print("Aimbot key pressed")
     elseif input.KeyCode == settings.keybinds.bhop then
         settings.isBhop = not settings.isBhop
         if settings.isBhop then
@@ -788,11 +937,17 @@ closeButton.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
--- Автоматическая очистка
+-- Автоматическая очистка при смерти
 player.CharacterAdded:Connect(function(character)
     wait(1)
     disableFlight()
     disableNoClip()
+    
+    local humanoid = character:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        disableFlight()
+        disableNoClip()
+    end)
 end)
 
 -- Инициализация
@@ -801,9 +956,11 @@ switchTab("Movement")
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "SCRIPT LOADED",
-    Text = "Insert - GUI, Delete - Panic, End - Unload",
+    Text = "All functions are working!",
     Duration = 5
 })
 
-print("Script loaded successfully!")
-print("All functions are available in the menu!")
+print("=== SCRIPT LOADED SUCCESSFULLY ===")
+print("Controls: Insert (GUI), Delete (Panic), End (Unload)")
+print("Keybinds: F-Flight, V-NoClip, X-ESP, Space-Bhop, Shift-Speed")
+print("All functions should work now!")

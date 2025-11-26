@@ -1,29 +1,89 @@
--- Простой чит скрипт
+-- Simple Cheat Menu
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 
-print("=== SIMPLE CHEAT LOADED ===")
+-- Создаем простое меню
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CheatMenu"
+screenGui.Parent = CoreGui
 
--- FLIGHT
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Parent = screenGui
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
+mainFrame.Size = UDim2.new(0, 200, 0, 250)
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+local title = Instance.new("TextLabel")
+title.Parent = mainFrame
+title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+title.BorderSizePixel = 0
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Font = Enum.Font.SourceSansBold
+title.Text = "CHEAT MENU"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 16
+
+local closeButton = Instance.new("TextButton")
+closeButton.Parent = mainFrame
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+closeButton.BorderSizePixel = 0
+closeButton.Position = UDim2.new(1, -25, 0, 5)
+closeButton.Size = UDim2.new(0, 20, 0, 20)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 12
+
+-- Функция для создания кнопок
+local function createButton(parent, text, position, callback)
+    local button = Instance.new("TextButton")
+    button.Parent = parent
+    button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    button.BorderSizePixel = 0
+    button.Position = position
+    button.Size = UDim2.new(0.9, 0, 0, 30)
+    button.Font = Enum.Font.SourceSans
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 14
+    
+    button.MouseButton1Click:Connect(callback)
+    return button
+end
+
+-- Переменные для функций
 local flying = false
 local flightBodyVelocity
+local noclip = false
+local espEnabled = false
+local highlights = {}
+local aimbotEnabled = false
+local speedHack = false
+local originalSpeed = 16
 
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.F then
-        flying = not flying
-        print("Flight: " .. (flying and "ON" or "OFF"))
-        
-        if flying then
-            local character = player.Character
-            if character and character:FindFirstChild("HumanoidRootPart") then
-                flightBodyVelocity = Instance.new("BodyVelocity")
-                flightBodyVelocity.Velocity = Vector3.new(0, 0, 0)
-                flightBodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
-                flightBodyVelocity.Parent = character.HumanoidRootPart
-                
+-- FLIGHT
+local flightBtn = createButton(mainFrame, "Flight: OFF", UDim2.new(0.05, 0, 0.15, 0), function()
+    flying = not flying
+    flightBtn.Text = flying and "Flight: ON" or "Flight: OFF"
+    
+    if flying then
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            flightBodyVelocity = Instance.new("BodyVelocity")
+            flightBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            flightBodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+            flightBodyVelocity.Parent = character.HumanoidRootPart
+            
+            -- Двигаем в отдельном потоке
+            coroutine.wrap(function()
                 while flying and character do
                     local cam = workspace.CurrentCamera
                     local moveDir = Vector3.new(0, 0, 0)
@@ -38,24 +98,22 @@ UserInputService.InputBegan:Connect(function(input)
                     flightBodyVelocity.Velocity = moveDir * 50
                     RunService.Heartbeat:Wait()
                 end
-            end
-        else
-            if flightBodyVelocity then
-                flightBodyVelocity:Destroy()
-            end
+            end)()
+        end
+    else
+        if flightBodyVelocity then
+            flightBodyVelocity:Destroy()
         end
     end
 end)
 
 -- NOCLIP
-local noclip = false
-
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.V then
-        noclip = not noclip
-        print("NoClip: " .. (noclip and "ON" or "OFF"))
-        
-        if noclip then
+local noclipBtn = createButton(mainFrame, "NoClip: OFF", UDim2.new(0.05, 0, 0.3, 0), function()
+    noclip = not noclip
+    noclipBtn.Text = noclip and "NoClip: ON" or "NoClip: OFF"
+    
+    if noclip then
+        coroutine.wrap(function()
             while noclip do
                 local character = player.Character
                 if character then
@@ -67,72 +125,81 @@ UserInputService.InputBegan:Connect(function(input)
                 end
                 RunService.Heartbeat:Wait()
             end
-        end
+        end)()
     end
 end)
 
 -- SPEED HACK
-local speedHack = false
-local originalSpeed = 16
-
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.G then
-        speedHack = not speedHack
-        print("Speed Hack: " .. (speedHack and "ON" or "OFF"))
-        
-        local character = player.Character
-        if character then
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                if speedHack then
-                    originalSpeed = humanoid.WalkSpeed
-                    humanoid.WalkSpeed = 50
-                else
-                    humanoid.WalkSpeed = originalSpeed
-                end
+local speedBtn = createButton(mainFrame, "Speed: OFF", UDim2.new(0.05, 0, 0.45, 0), function()
+    speedHack = not speedHack
+    speedBtn.Text = speedHack and "Speed: ON" or "Speed: OFF"
+    
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            if speedHack then
+                originalSpeed = humanoid.WalkSpeed
+                humanoid.WalkSpeed = 50
+            else
+                humanoid.WalkSpeed = originalSpeed
             end
         end
     end
 end)
 
 -- ESP
-local espEnabled = false
-local highlights = {}
-
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.X then
-        espEnabled = not espEnabled
-        print("ESP: " .. (espEnabled and "ON" or "OFF"))
-        
-        if espEnabled then
-            for _, otherPlayer in pairs(Players:GetPlayers()) do
-                if otherPlayer ~= player then
-                    if otherPlayer.Character then
-                        local highlight = Instance.new("Highlight")
-                        highlight.FillColor = Color3.new(1, 0, 0)
-                        highlight.OutlineColor = Color3.new(1, 1, 1)
-                        highlight.FillTransparency = 0.5
-                        highlight.Parent = otherPlayer.Character
-                        highlight.Adornee = otherPlayer.Character
-                        highlights[otherPlayer] = highlight
-                    end
-                end
+local espBtn = createButton(mainFrame, "ESP: OFF", UDim2.new(0.05, 0, 0.6, 0), function()
+    espEnabled = not espEnabled
+    espBtn.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+    
+    if espEnabled then
+        for _, otherPlayer in pairs(Players:GetPlayers()) do
+            if otherPlayer ~= player and otherPlayer.Character then
+                local highlight = Instance.new("Highlight")
+                highlight.FillColor = Color3.new(1, 0, 0)
+                highlight.OutlineColor = Color3.new(1, 1, 1)
+                highlight.FillTransparency = 0.5
+                highlight.Parent = otherPlayer.Character
+                highlight.Adornee = otherPlayer.Character
+                highlights[otherPlayer] = highlight
             end
-        else
-            for _, highlight in pairs(highlights) do
-                if highlight then
-                    highlight:Destroy()
-                end
-            end
-            highlights = {}
         end
+    else
+        for _, highlight in pairs(highlights) do
+            if highlight then
+                highlight:Destroy()
+            end
+        end
+        highlights = {}
     end
 end)
 
--- AIMBOT (ИГНОРИРУЕТ ТИММЕЙТОВ)
-local aimbotEnabled = false
-local aimKey = Enum.UserInputType.MouseButton2
+-- AIMBOT
+local aimbotBtn = createButton(mainFrame, "Aimbot: OFF", UDim2.new(0.05, 0, 0.75, 0), function()
+    aimbotEnabled = not aimbotEnabled
+    aimbotBtn.Text = aimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
+    
+    if aimbotEnabled then
+        coroutine.wrap(function()
+            while aimbotEnabled do
+                if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+                    local closestEnemy = getClosestEnemy()
+                    if closestEnemy and closestEnemy.Character then
+                        local targetRoot = closestEnemy.Character:FindFirstChild("HumanoidRootPart")
+                        local camera = workspace.CurrentCamera
+                        if targetRoot and camera then
+                            camera.CFrame = CFrame.new(camera.CFrame.Position, targetRoot.Position)
+                        end
+                    end
+                end
+                RunService.Heartbeat:Wait()
+            end
+        end)()
+    end
+end)
 
+-- Функция для поиска ближайшего врага (игнорирует тиммейтов)
 local function getClosestEnemy()
     local closestPlayer = nil
     local closestDistance = math.huge
@@ -171,59 +238,37 @@ local function getClosestEnemy()
     return closestPlayer
 end
 
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.Q then
-        aimbotEnabled = not aimbotEnabled
-        print("Aimbot: " .. (aimbotEnabled and "ON" or "OFF"))
-        
-        if aimbotEnabled then
-            while aimbotEnabled do
-                if UserInputService:IsMouseButtonPressed(aimKey) then
-                    local closestEnemy = getClosestEnemy()
-                    if closestEnemy and closestEnemy.Character then
-                        local targetRoot = closestEnemy.Character:FindFirstChild("HumanoidRootPart")
-                        local camera = workspace.CurrentCamera
-                        if targetRoot and camera then
-                            camera.CFrame = CFrame.new(camera.CFrame.Position, targetRoot.Position)
-                        end
-                    end
-                end
-                RunService.Heartbeat:Wait()
-            end
-        end
+-- Информация
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Parent = mainFrame
+infoLabel.BackgroundTransparency = 1
+infoLabel.Position = UDim2.new(0.05, 0, 0.9, 0)
+infoLabel.Size = UDim2.new(0.9, 0, 0, 40)
+infoLabel.Font = Enum.Font.SourceSans
+infoLabel.Text = "Insert - Hide/Show"
+infoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+infoLabel.TextSize = 12
+
+-- Закрытие меню
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Горячие клавиши
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Enum.KeyCode.Insert then
+        mainFrame.Visible = not mainFrame.Visible
     end
 end)
 
--- ANTI-AFK
-local antiAFK = false
-
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.H then
-        antiAFK = not antiAFK
-        print("Anti-AFK: " .. (antiAFK and "ON" or "OFF"))
-        
-        if antiAFK then
-            local virtualUser = game:GetService("VirtualUser")
-            game:GetService("Players").LocalPlayer.Idled:connect(function()
-                virtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                wait(1)
-                virtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-            end)
-        end
-    end
-end)
-
-print("Горячие клавиши:")
-print("F - Полет")
-print("V - NoClip") 
-print("G - Скорость")
-print("X - ESP")
-print("Q - Aimbot (ПКМ для прицеливания)")
-print("H - Anti-AFK")
+print("Cheat Menu Loaded!")
+print("Insert - Show/Hide Menu")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "ЧИТЫ ЗАГРУЖЕНЫ",
-    Text = "F-полет, V-ноклип, G-скорость, X-ESP, Q-аимбот",
-    Duration = 8
+    Title = "CHEAT MENU LOADED",
+    Text = "Insert - Show/Hide Menu",
+    Duration = 5
 })

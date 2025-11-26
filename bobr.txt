@@ -1,341 +1,205 @@
+-- Простой чит скрипт
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 
--- Создаем простой GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SimpleScript"
-screenGui.Parent = CoreGui
+print("=== SIMPLE CHEAT LOADED ===")
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Parent = screenGui
-mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-mainFrame.BorderSizePixel = 0
-mainFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
-mainFrame.Size = UDim2.new(0, 250, 0, 300)
-mainFrame.Active = true
-mainFrame.Draggable = true
-
-local title = Instance.new("TextLabel")
-title.Parent = mainFrame
-title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-title.BorderSizePixel = 0
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Font = Enum.Font.SourceSansBold
-title.Text = "SIMPLE SCRIPT"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 16
-
--- Функции
-local function createButton(parent, text, position, callback)
-    local button = Instance.new("TextButton")
-    button.Parent = parent
-    button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    button.BorderSizePixel = 0
-    button.Position = position
-    button.Size = UDim2.new(0.9, 0, 0, 30)
-    button.Font = Enum.Font.SourceSans
-    button.Text = text
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.TextSize = 14
-    
-    button.MouseButton1Click:Connect(callback)
-    return button
-end
-
--- FLIGHT SYSTEM
+-- FLIGHT
 local flying = false
-local flightConnection
+local flightBodyVelocity
 
-local function enableFlight()
-    if flying then return end
-    
-    local character = player.Character
-    if not character then return end
-    
-    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    if not humanoidRootPart then return end
-    
-    flying = true
-    print("Flight ON")
-    
-    local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-    bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
-    bodyVelocity.Parent = humanoidRootPart
-    
-    flightConnection = RunService.Heartbeat:Connect(function()
-        if not flying or not character then return end
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F then
+        flying = not flying
+        print("Flight: " .. (flying and "ON" or "OFF"))
         
-        local cam = workspace.CurrentCamera
-        local moveDirection = Vector3.new(0, 0, 0)
-        
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-            moveDirection = moveDirection + cam.CFrame.LookVector
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-            moveDirection = moveDirection - cam.CFrame.LookVector
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-            moveDirection = moveDirection - cam.CFrame.RightVector
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-            moveDirection = moveDirection + cam.CFrame.RightVector
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-            moveDirection = moveDirection + Vector3.new(0, 1, 0)
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-            moveDirection = moveDirection - Vector3.new(0, 1, 0)
-        end
-        
-        bodyVelocity.Velocity = moveDirection * 100
-    end)
-end
-
-local function disableFlight()
-    if not flying then return end
-    
-    flying = false
-    print("Flight OFF")
-    
-    local character = player.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        for _, v in pairs(character.HumanoidRootPart:GetChildren()) do
-            if v:IsA("BodyVelocity") then
-                v:Destroy()
+        if flying then
+            -- Включить полет
+            local character = player.Character
+            if character and character:FindFirstChild("HumanoidRootPart") then
+                flightBodyVelocity = Instance.new("BodyVelocity")
+                flightBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                flightBodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+                flightBodyVelocity.Parent = character.HumanoidRootPart
+                
+                -- Двигаем персонажа
+                while flying and character do
+                    local cam = workspace.CurrentCamera
+                    local moveDir = Vector3.new(0, 0, 0)
+                    
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+                    
+                    flightBodyVelocity.Velocity = moveDir * 50
+                    RunService.Heartbeat:Wait()
+                end
+            end
+        else
+            -- Выключить полет
+            if flightBodyVelocity then
+                flightBodyVelocity:Destroy()
+                flightBodyVelocity = nil
             end
         end
     end
-    
-    if flightConnection then
-        flightConnection:Disconnect()
-    end
-end
+end)
 
--- NOCLIP SYSTEM
+-- NOCLIP
 local noclip = false
-local noclipConnection
 
-local function enableNoClip()
-    if noclip then return end
-    
-    noclip = true
-    print("NoClip ON")
-    
-    noclipConnection = RunService.Stepped:Connect(function()
-        if not noclip then return end
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.V then
+        noclip = not noclip
+        print("NoClip: " .. (noclip and "ON" or "OFF"))
         
-        local character = player.Character
-        if character then
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
+        if noclip then
+            -- Включить ноклип
+            while noclip do
+                local character = player.Character
+                if character then
+                    for _, part in pairs(character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+                RunService.Heartbeat:Wait()
+            end
+        else
+            -- Выключить ноклип
+            local character = player.Character
+            if character then
+                for _, part in pairs(character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
                 end
             end
         end
-    end)
-end
-
-local function disableNoClip()
-    if not noclip then return end
-    
-    noclip = false
-    print("NoClip OFF")
-    
-    if noclipConnection then
-        noclipConnection:Disconnect()
     end
-end
+end)
 
 -- SPEED HACK
 local speedHack = false
-local originalWalkSpeed = 16
+local originalSpeed = 16
 
-local function enableSpeedHack()
-    if speedHack then return end
-    
-    speedHack = true
-    print("Speed Hack ON")
-    
-    local character = player.Character
-    if character then
-        local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-        if humanoid then
-            originalWalkSpeed = humanoid.WalkSpeed
-            humanoid.WalkSpeed = 50
-        end
-    end
-end
-
-local function disableSpeedHack()
-    if not speedHack then return end
-    
-    speedHack = false
-    print("Speed Hack OFF")
-    
-    local character = player.Character
-    if character then
-        local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = originalWalkSpeed
-        end
-    end
-end
-
--- ESP SYSTEM
-local espEnabled = false
-local espHighlights = {}
-
-local function enableESP()
-    if espEnabled then return end
-    
-    espEnabled = true
-    print("ESP ON")
-    
-    for _, otherPlayer in pairs(Players:GetPlayers()) do
-        if otherPlayer ~= player and otherPlayer.Character then
-            local character = otherPlayer.Character
-            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-            
-            if humanoidRootPart then
-                local highlight = Instance.new("Highlight")
-                highlight.Parent = character
-                highlight.Adornee = character
-                highlight.FillColor = Color3.new(1, 0, 0)
-                highlight.OutlineColor = Color3.new(1, 1, 1)
-                highlight.FillTransparency = 0.5
-                
-                espHighlights[otherPlayer] = highlight
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.G then
+        speedHack = not speedHack
+        print("Speed Hack: " .. (speedHack and "ON" or "OFF"))
+        
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                if speedHack then
+                    originalSpeed = humanoid.WalkSpeed
+                    humanoid.WalkSpeed = 50
+                else
+                    humanoid.WalkSpeed = originalSpeed
+                end
             end
         end
     end
-end
-
-local function disableESP()
-    if not espEnabled then return end
-    
-    espEnabled = false
-    print("ESP OFF")
-    
-    for _, highlight in pairs(espHighlights) do
-        if highlight then
-            highlight:Destroy()
-        end
-    end
-    espHighlights = {}
-end
-
--- Создаем кнопки
-local yPos = 40
-
-local flightBtn = createButton(mainFrame, "Flight: OFF", UDim2.new(0.05, 0, 0, yPos), function()
-    flying = not flying
-    if flying then
-        flightBtn.Text = "Flight: ON"
-        enableFlight()
-    else
-        flightBtn.Text = "Flight: OFF"
-        disableFlight()
-    end
 end)
-yPos = yPos + 35
 
-local noclipBtn = createButton(mainFrame, "NoClip: OFF", UDim2.new(0.05, 0, 0, yPos), function()
-    noclip = not noclip
-    if noclip then
-        noclipBtn.Text = "NoClip: ON"
-        enableNoClip()
-    else
-        noclipBtn.Text = "NoClip: OFF"
-        disableNoClip()
-    end
-end)
-yPos = yPos + 35
+-- ESP
+local espEnabled = false
+local highlights = {}
 
-local speedBtn = createButton(mainFrame, "Speed Hack: OFF", UDim2.new(0.05, 0, 0, yPos), function()
-    speedHack = not speedHack
-    if speedHack then
-        speedBtn.Text = "Speed Hack: ON"
-        enableSpeedHack()
-    else
-        speedBtn.Text = "Speed Hack: OFF"
-        disableSpeedHack()
-    end
-end)
-yPos = yPos + 35
-
-local espBtn = createButton(mainFrame, "ESP: OFF", UDim2.new(0.05, 0, 0, yPos), function()
-    espEnabled = not espEnabled
-    if espEnabled then
-        espBtn.Text = "ESP: ON"
-        enableESP()
-    else
-        espBtn.Text = "ESP: OFF"
-        disableESP()
-    end
-end)
-yPos = yPos + 35
-
--- Hotkeys
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    
-    if input.KeyCode == Enum.KeyCode.F then
-        flying = not flying
-        if flying then
-            flightBtn.Text = "Flight: ON"
-            enableFlight()
-        else
-            flightBtn.Text = "Flight: OFF"
-            disableFlight()
-        end
-    elseif input.KeyCode == Enum.KeyCode.V then
-        noclip = not noclip
-        if noclip then
-            noclipBtn.Text = "NoClip: ON"
-            enableNoClip()
-        else
-            noclipBtn.Text = "NoClip: OFF"
-            disableNoClip()
-        end
-    elseif input.KeyCode == Enum.KeyCode.X then
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.X then
         espEnabled = not espEnabled
+        print("ESP: " .. (espEnabled and "ON" or "OFF"))
+        
         if espEnabled then
-            espBtn.Text = "ESP: ON"
-            enableESP()
+            -- Включить ESP
+            for _, otherPlayer in pairs(Players:GetPlayers()) do
+                if otherPlayer ~= player then
+                    if otherPlayer.Character then
+                        addESP(otherPlayer)
+                    end
+                    otherPlayer.CharacterAdded:Connect(function(char)
+                        if espEnabled then
+                            wait(1)
+                            addESP(otherPlayer)
+                        end
+                    end)
+                end
+            end
         else
-            espBtn.Text = "ESP: OFF"
-            disableESP()
+            -- Выключить ESP
+            for player, highlight in pairs(highlights) do
+                if highlight then
+                    highlight:Destroy()
+                end
+            end
+            highlights = {}
         end
-    elseif input.KeyCode == Enum.KeyCode.Insert then
-        screenGui.Enabled = not screenGui.Enabled
     end
 end)
 
--- Информация
-local infoLabel = Instance.new("TextLabel")
-infoLabel.Parent = mainFrame
-infoLabel.BackgroundTransparency = 1
-infoLabel.Position = UDim2.new(0.05, 0, 0, yPos + 10)
-infoLabel.Size = UDim2.new(0.9, 0, 0, 60)
-infoLabel.Font = Enum.Font.SourceSans
-infoLabel.Text = "Hotkeys:\nF - Flight\nV - NoClip\nX - ESP\nInsert - Hide GUI"
-infoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-infoLabel.TextSize = 12
-infoLabel.TextWrapped = true
+function addESP(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
+    
+    local character = targetPlayer.Character
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    
+    if humanoid then
+        local highlight = Instance.new("Highlight")
+        highlight.FillColor = Color3.new(1, 0, 0)
+        highlight.OutlineColor = Color3.new(1, 1, 1)
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0
+        highlight.Parent = character
+        highlight.Adornee = character
+        
+        highlights[targetPlayer] = highlight
+        
+        -- Обновляем позицию
+        while espEnabled and character and highlight do
+            highlight.Adornee = character
+            RunService.Heartbeat:Wait()
+        end
+    end
+end
 
-print("=== SIMPLE SCRIPT LOADED ===")
-print("Press F to fly, V for noclip, X for ESP")
-print("Press Insert to hide/show GUI")
+-- ANTI-AFK
+local antiAFK = false
+
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.H then
+        antiAFK = not antiAFK
+        print("Anti-AFK: " .. (antiAFK and "ON" or "OFF"))
+        
+        if antiAFK then
+            local virtualUser = game:GetService("VirtualUser")
+            game:GetService("Players").LocalPlayer.Idled:connect(function()
+                virtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                wait(1)
+                virtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            end)
+        end
+    end
+end)
+
+print("Горячие клавиши:")
+print("F - Полет")
+print("V - NoClip") 
+print("G - Скорость")
+print("X - ESP")
+print("H - Anti-AFK")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "SCRIPT LOADED",
-    Text = "F-Flight, V-NoClip, X-ESP, Insert-GUI",
-    Duration = 5
+    Title = "ЧИТЫ ЗАГРУЖЕНЫ",
+    Text = "F-полет, V-ноклип, G-скорость, X-ESP, H-антиафк",
+    Duration = 8
 })

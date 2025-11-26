@@ -6,6 +6,8 @@ local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 
+print("=== CHEAT MENU LOADED ===")
+
 -- Создаем меню
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CheatMenu"
@@ -69,10 +71,11 @@ local aimbotEnabled = false
 local speedHack = false
 local originalSpeed = 16
 
--- FLIGHT
+-- FLIGHT SYSTEM
 local flightBtn = createButton(mainFrame, "Flight: OFF", UDim2.new(0.05, 0, 0.15, 0), function()
     flying = not flying
     flightBtn.Text = flying and "Flight: ON" or "Flight: OFF"
+    print("Flight: " .. (flying and "ON" or "OFF"))
     
     if flying then
         local character = player.Character
@@ -82,8 +85,8 @@ local flightBtn = createButton(mainFrame, "Flight: OFF", UDim2.new(0.05, 0, 0.15
             flightBodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
             flightBodyVelocity.Parent = character.HumanoidRootPart
             
-            -- Двигаем в отдельном потоке
-            spawn(function()
+            -- Flight loop
+            coroutine.wrap(function()
                 while flying and character do
                     local cam = workspace.CurrentCamera
                     local moveDir = Vector3.new(0, 0, 0)
@@ -98,7 +101,7 @@ local flightBtn = createButton(mainFrame, "Flight: OFF", UDim2.new(0.05, 0, 0.15
                     flightBodyVelocity.Velocity = moveDir * 50
                     RunService.Heartbeat:Wait()
                 end
-            end)
+            end)()
         end
     else
         if flightBodyVelocity then
@@ -107,13 +110,14 @@ local flightBtn = createButton(mainFrame, "Flight: OFF", UDim2.new(0.05, 0, 0.15
     end
 end)
 
--- NOCLIP
+-- NOCLIP SYSTEM
 local noclipBtn = createButton(mainFrame, "NoClip: OFF", UDim2.new(0.05, 0, 0.3, 0), function()
     noclip = not noclip
     noclipBtn.Text = noclip and "NoClip: ON" or "NoClip: OFF"
+    print("NoClip: " .. (noclip and "ON" or "OFF"))
     
     if noclip then
-        spawn(function()
+        coroutine.wrap(function()
             while noclip do
                 local character = player.Character
                 if character then
@@ -125,14 +129,24 @@ local noclipBtn = createButton(mainFrame, "NoClip: OFF", UDim2.new(0.05, 0, 0.3,
                 end
                 RunService.Heartbeat:Wait()
             end
-        end)
+        end)()
+    else
+        local character = player.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
     end
 end)
 
--- SPEED HACK
+-- SPEED HACK SYSTEM
 local speedBtn = createButton(mainFrame, "Speed: OFF", UDim2.new(0.05, 0, 0.45, 0), function()
     speedHack = not speedHack
     speedBtn.Text = speedHack and "Speed: ON" or "Speed: OFF"
+    print("Speed Hack: " .. (speedHack and "ON" or "OFF"))
     
     local character = player.Character
     if character then
@@ -141,17 +155,24 @@ local speedBtn = createButton(mainFrame, "Speed: OFF", UDim2.new(0.05, 0, 0.45, 
             if speedHack then
                 originalSpeed = humanoid.WalkSpeed
                 humanoid.WalkSpeed = 50
+                print("Speed set to 50")
             else
                 humanoid.WalkSpeed = originalSpeed
+                print("Speed reset to " .. originalSpeed)
             end
+        else
+            print("No humanoid found")
         end
+    else
+        print("No character found")
     end
 end)
 
--- ESP
+-- ESP SYSTEM
 local espBtn = createButton(mainFrame, "ESP: OFF", UDim2.new(0.05, 0, 0.6, 0), function()
     espEnabled = not espEnabled
     espBtn.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+    print("ESP: " .. (espEnabled and "ON" or "OFF"))
     
     if espEnabled then
         for _, otherPlayer in pairs(Players:GetPlayers()) do
@@ -163,25 +184,28 @@ local espBtn = createButton(mainFrame, "ESP: OFF", UDim2.new(0.05, 0, 0.6, 0), f
                 highlight.Parent = otherPlayer.Character
                 highlight.Adornee = otherPlayer.Character
                 highlights[otherPlayer] = highlight
+                print("ESP added for " .. otherPlayer.Name)
             end
         end
     else
-        for _, highlight in pairs(highlights) do
+        for playerName, highlight in pairs(highlights) do
             if highlight then
                 highlight:Destroy()
+                print("ESP removed for " .. playerName)
             end
         end
         highlights = {}
     end
 end)
 
--- AIMBOT
+-- AIMBOT SYSTEM
 local aimbotBtn = createButton(mainFrame, "Aimbot: OFF", UDim2.new(0.05, 0, 0.75, 0), function()
     aimbotEnabled = not aimbotEnabled
     aimbotBtn.Text = aimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
+    print("Aimbot: " .. (aimbotEnabled and "ON" or "OFF"))
     
     if aimbotEnabled then
-        spawn(function()
+        coroutine.wrap(function()
             while aimbotEnabled do
                 if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
                     local closestEnemy = getClosestEnemy()
@@ -195,7 +219,7 @@ local aimbotBtn = createButton(mainFrame, "Aimbot: OFF", UDim2.new(0.05, 0, 0.75
                 end
                 RunService.Heartbeat:Wait()
             end
-        end)
+        end)()
     end
 end)
 
@@ -218,18 +242,16 @@ local function getClosestEnemy()
                 end
             end
             
-            if isTeammate then
-                continue
-            end
-            
-            local targetRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-            local humanoid = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
-            
-            if targetRoot and humanoid and humanoid.Health > 0 then
-                local distance = (localRoot.Position - targetRoot.Position).Magnitude
-                if distance < closestDistance then
-                    closestDistance = distance
-                    closestPlayer = otherPlayer
+            if not isTeammate then
+                local targetRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+                local humanoid = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
+                
+                if targetRoot and humanoid and humanoid.Health > 0 then
+                    local distance = (localRoot.Position - targetRoot.Position).Magnitude
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestPlayer = otherPlayer
+                    end
                 end
             end
         end
@@ -252,6 +274,7 @@ infoLabel.TextSize = 12
 -- Закрытие меню
 closeButton.MouseButton1Click:Connect(function()
     screenGui:Destroy()
+    print("Menu closed")
 end)
 
 -- Горячие клавиши
@@ -260,6 +283,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     
     if input.KeyCode == Enum.KeyCode.Insert then
         mainFrame.Visible = not mainFrame.Visible
+        print("Menu visibility: " .. (mainFrame.Visible and "ON" or "OFF"))
     end
 end)
 

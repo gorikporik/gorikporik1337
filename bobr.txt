@@ -1,8 +1,9 @@
--- Complete Cheat Menu with Aimbot and ESP
+-- Complete Cheat Menu with Aimbot, ESP and FOV
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 
@@ -19,7 +20,7 @@ mainFrame.Parent = screenGui
 mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
-mainFrame.Size = UDim2.new(0, 200, 0, 300)
+mainFrame.Size = UDim2.new(0, 250, 0, 400)
 mainFrame.Active = true
 mainFrame.Draggable = true
 
@@ -29,7 +30,7 @@ title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 title.BorderSizePixel = 0
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Font = Enum.Font.SourceSansBold
-title.Text = "COMPLETE CHEATS"
+title.Text = "COMPLETE CHEATS v2.0"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 14
 
@@ -40,6 +41,8 @@ local noclipEnabled = false
 local flyEnabled = false
 local espEnabled = false
 local aimbotEnabled = false
+local fovEnabled = false
+local currentFov = 120
 
 -- Функция для создания кнопок
 local function createButton(text, position)
@@ -57,8 +60,24 @@ local function createButton(text, position)
     return button
 end
 
+-- Функция для создания текстовой метки
+local function createLabel(text, position)
+    local label = Instance.new("TextLabel")
+    label.Parent = mainFrame
+    label.BackgroundTransparency = 1
+    label.Position = position
+    label.Size = UDim2.new(0.9, 0, 0, 20)
+    label.Font = Enum.Font.SourceSans
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 11
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    return label
+end
+
 -- 1. SPEED HACK
-local speedBtn = createButton("SPEED: OFF", UDim2.new(0.05, 0, 0.15, 0))
+local speedBtn = createButton("SPEED: OFF", UDim2.new(0.05, 0, 0.12, 0))
 speedBtn.MouseButton1Click:Connect(function()
     speedEnabled = not speedEnabled
     local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
@@ -81,7 +100,7 @@ speedBtn.MouseButton1Click:Connect(function()
 end)
 
 -- 2. JUMP POWER
-local jumpBtn = createButton("JUMP: OFF", UDim2.new(0.05, 0, 0.25, 0))
+local jumpBtn = createButton("JUMP: OFF", UDim2.new(0.05, 0, 0.19, 0))
 jumpBtn.MouseButton1Click:Connect(function()
     jumpEnabled = not jumpEnabled
     local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
@@ -104,7 +123,7 @@ jumpBtn.MouseButton1Click:Connect(function()
 end)
 
 -- 3. NOCLIP
-local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.35, 0))
+local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.26, 0))
 noclipBtn.MouseButton1Click:Connect(function()
     noclipEnabled = not noclipEnabled
     
@@ -145,7 +164,7 @@ noclipBtn.MouseButton1Click:Connect(function()
 end)
 
 -- 4. FLY
-local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.45, 0))
+local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.33, 0))
 local flyBodyVelocity
 
 flyBtn.MouseButton1Click:Connect(function()
@@ -198,8 +217,13 @@ flyBtn.MouseButton1Click:Connect(function()
 end)
 
 -- 5. ESP
-local espBtn = createButton("ESP: OFF", UDim2.new(0.05, 0, 0.55, 0))
+local espBtn = createButton("ESP: OFF", UDim2.new(0.05, 0, 0.40, 0))
 local highlights = {}
+local espColors = {
+    enemy = Color3.new(1, 0, 0),    -- Красный для врагов
+    teammate = Color3.new(0, 0, 1), -- Синий для тиммейтов
+    neutral = Color3.new(0, 1, 0)   -- Зеленый для нейтральных
+}
 
 espBtn.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
@@ -209,14 +233,27 @@ espBtn.MouseButton1Click:Connect(function()
         espBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
         print("✅ ESP ON")
         
+        -- Функция для получения цвета ESP
+        local function getEspColor(targetPlayer)
+            if player.Team and targetPlayer.Team then
+                if player.Team == targetPlayer.Team then
+                    return espColors.teammate
+                else
+                    return espColors.enemy
+                end
+            end
+            return espColors.neutral
+        end
+        
         -- Включить ESP для всех игроков
         for _, otherPlayer in pairs(Players:GetPlayers()) do
             if otherPlayer ~= player and otherPlayer.Character then
                 local highlight = Instance.new("Highlight")
-                highlight.FillColor = Color3.new(1, 0, 0)  -- Красный цвет
-                highlight.OutlineColor = Color3.new(1, 1, 1) -- Белая обводка
+                highlight.FillColor = getEspColor(otherPlayer)
+                highlight.OutlineColor = Color3.new(1, 1, 1)
                 highlight.FillTransparency = 0.5
                 highlight.OutlineTransparency = 0
+                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                 highlight.Parent = otherPlayer.Character
                 highlight.Adornee = otherPlayer.Character
                 highlights[otherPlayer] = highlight
@@ -232,9 +269,10 @@ espBtn.MouseButton1Click:Connect(function()
                     wait(1)
                     if espEnabled and character then
                         local highlight = Instance.new("Highlight")
-                        highlight.FillColor = Color3.new(1, 0, 0)
+                        highlight.FillColor = getEspColor(newPlayer)
                         highlight.OutlineColor = Color3.new(1, 1, 1)
                         highlight.FillTransparency = 0.5
+                        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                         highlight.Parent = character
                         highlight.Adornee = character
                         highlights[newPlayer] = highlight
@@ -259,9 +297,64 @@ espBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 6. AIMBOT
-local aimbotBtn = createButton("AIMBOT: OFF", UDim2.new(0.05, 0, 0.65, 0))
+-- 6. FOV CHANGER
+local fovBtn = createButton("FOV: 70 (OFF)", UDim2.new(0.05, 0, 0.47, 0))
+fovBtn.MouseButton1Click:Connect(function()
+    fovEnabled = not fovEnabled
+    local camera = workspace.CurrentCamera
+    
+    if camera then
+        if fovEnabled then
+            currentFov = 120
+            camera.FieldOfView = currentFov
+            fovBtn.Text = "FOV: 120 (ON)"
+            fovBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+            print("✅ FOV ON - FieldOfView: 120")
+        else
+            currentFov = 70
+            camera.FieldOfView = currentFov
+            fovBtn.Text = "FOV: 70 (OFF)"
+            fovBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            print("❌ FOV OFF - FieldOfView: 70")
+        end
+    end
+end)
+
+-- 7. AIMBOT
+local aimbotBtn = createButton("AIMBOT: OFF", UDim2.new(0.05, 0, 0.54, 0))
 local aimbotConnection
+local fovCircle = nil
+local aimbotFov = 100  -- FOV для аимбота
+
+-- Создаем FOV круг для аимбота
+local function createFovCircle()
+    if fovCircle then fovCircle:Remove() end
+    
+    local circle = Drawing.new("Circle")
+    circle.Visible = true
+    circle.Thickness = 2
+    circle.Color = Color3.new(1, 1, 1)
+    circle.Transparency = 1
+    circle.Filled = false
+    circle.Radius = aimbotFov
+    circle.Position = Vector2.new(
+        workspace.CurrentCamera.ViewportSize.X / 2,
+        workspace.CurrentCamera.ViewportSize.Y / 2
+    )
+    
+    fovCircle = circle
+    return circle
+end
+
+-- Обновление позиции FOV круга
+RunService.RenderStepped:Connect(function()
+    if fovCircle then
+        fovCircle.Position = Vector2.new(
+            workspace.CurrentCamera.ViewportSize.X / 2,
+            workspace.CurrentCamera.ViewportSize.Y / 2
+        )
+    end
+end)
 
 aimbotBtn.MouseButton1Click:Connect(function()
     aimbotEnabled = not aimbotEnabled
@@ -271,13 +364,20 @@ aimbotBtn.MouseButton1Click:Connect(function()
         aimbotBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
         print("✅ Aimbot ON - Hold Right Mouse to aim")
         
-        -- Функция для поиска ближайшего врага
-        local function getClosestEnemy()
+        -- Создаем FOV круг
+        createFovCircle()
+        fovCircle.Visible = true
+        
+        -- Функция для поиска врага в FOV
+        local function getClosestEnemyInFov()
             local closestPlayer = nil
             local closestDistance = math.huge
             local localRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            local camera = workspace.CurrentCamera
             
-            if not localRoot then return nil end
+            if not localRoot or not camera then return nil end
+            
+            local mousePos = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
             
             for _, otherPlayer in pairs(Players:GetPlayers()) do
                 if otherPlayer ~= player and otherPlayer.Character then
@@ -295,10 +395,18 @@ aimbotBtn.MouseButton1Click:Connect(function()
                         local humanoid = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
                         
                         if targetRoot and humanoid and humanoid.Health > 0 then
-                            local distance = (localRoot.Position - targetRoot.Position).Magnitude
-                            if distance < closestDistance then
-                                closestDistance = distance
-                                closestPlayer = otherPlayer
+                            -- Конвертируем мировую позицию в экранную
+                            local screenPoint, onScreen = camera:WorldToViewportPoint(targetRoot.Position)
+                            
+                            if onScreen then
+                                local screenPos = Vector2.new(screenPoint.X, screenPoint.Y)
+                                local distance = (mousePos - screenPos).Magnitude
+                                
+                                -- Проверяем находится ли враг в FOV
+                                if distance <= aimbotFov and distance < closestDistance then
+                                    closestDistance = distance
+                                    closestPlayer = otherPlayer
+                                end
                             end
                         end
                     end
@@ -311,12 +419,15 @@ aimbotBtn.MouseButton1Click:Connect(function()
         -- Включить аимбот
         aimbotConnection = RunService.Heartbeat:Connect(function()
             if aimbotEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-                local closestEnemy = getClosestEnemy()
+                local closestEnemy = getClosestEnemyInFov()
                 if closestEnemy and closestEnemy.Character then
                     local targetRoot = closestEnemy.Character:FindFirstChild("HumanoidRootPart")
                     local camera = workspace.CurrentCamera
                     if targetRoot and camera then
-                        camera.CFrame = CFrame.new(camera.CFrame.Position, targetRoot.Position)
+                        -- Плавный аимбот
+                        local currentCFrame = camera.CFrame
+                        local targetCFrame = CFrame.new(camera.CFrame.Position, targetRoot.Position)
+                        camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.7)
                     end
                 end
             end
@@ -327,24 +438,39 @@ aimbotBtn.MouseButton1Click:Connect(function()
         aimbotBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         print("❌ Aimbot OFF")
         
-        -- Выключить аимбот
+        -- Выключить аимбот и скрыть FOV круг
         if aimbotConnection then
             aimbotConnection:Disconnect()
+        end
+        if fovCircle then
+            fovCircle.Visible = false
         end
     end
 end)
 
+-- Кнопка для изменения FOV аимбота
+local fovAimBtn = createButton("AIMBOT FOV: 100", UDim2.new(0.05, 0, 0.61, 0))
+fovAimBtn.MouseButton1Click:Connect(function()
+    aimbotFov = aimbotFov + 20
+    if aimbotFov > 200 then
+        aimbotFov = 60
+    end
+    
+    fovAimBtn.Text = "AIMBOT FOV: " .. aimbotFov
+    
+    if fovCircle then
+        fovCircle.Radius = aimbotFov
+    end
+    
+    print("🎯 Aimbot FOV set to: " .. aimbotFov)
+end)
+
 -- Информация
-local infoLabel = Instance.new("TextLabel")
-infoLabel.Parent = mainFrame
-infoLabel.BackgroundTransparency = 1
-infoLabel.Position = UDim2.new(0.05, 0, 0.85, 0)
-infoLabel.Size = UDim2.new(0.9, 0, 0, 40)
-infoLabel.Font = Enum.Font.SourceSans
-infoLabel.Text = "Insert: Show/Hide\nAimbot: Hold Right Mouse"
-infoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-infoLabel.TextSize = 10
-infoLabel.TextWrapped = true
+local infoLabel = createLabel("Controls:", UDim2.new(0.05, 0, 0.75, 0))
+local infoLabel2 = createLabel("Insert: Show/Hide Menu", UDim2.new(0.05, 0, 0.78, 0))
+local infoLabel3 = createLabel("Delete: Destroy Menu", UDim2.new(0.05, 0, 0.81, 0))
+local infoLabel4 = createLabel("Aimbot: Hold Right Mouse", UDim2.new(0.05, 0, 0.84, 0))
+local infoLabel5 = createLabel("ESP: Team Colors", UDim2.new(0.05, 0, 0.87, 0))
 
 -- Горячие клавиши
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -355,17 +481,19 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         print("📋 Menu: " .. (mainFrame.Visible and "SHOWN" or "HIDDEN"))
     elseif input.KeyCode == Enum.KeyCode.Delete then
         screenGui:Destroy()
+        if fovCircle then fovCircle:Remove() end
         print("🗑️ Menu destroyed")
     end
 end)
 
-print("✅ Complete Cheat Menu Loaded!")
-print("🎯 Aimbot: Hold Right Mouse Button")
-print("🔴 ESP: Red highlights around players")
+print("✅ Complete Cheat Menu v2.0 Loaded!")
+print("🎯 Aimbot: Hold Right Mouse Button (with FOV)")
+print("🔴 ESP: Team-based colors (Red=Enemy, Blue=Team)")
+print("👁️ FOV Changer: Increased field of view")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "COMPLETE MENU LOADED",
-    Text = "Aimbot + ESP Added!",
+    Title = "COMPLETE MENU v2.0 LOADED",
+    Text = "Aimbot + ESP + FOV Added!",
     Duration = 5
 })

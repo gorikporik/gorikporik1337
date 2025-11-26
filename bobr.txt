@@ -1,4 +1,4 @@
--- Ultra Simple Working Cheat Menu
+-- Fixed Cheat Menu
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -6,11 +6,11 @@ local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 
-print("=== SIMPLE CHEAT MENU ===")
+print("=== FIXED CHEAT MENU ===")
 
 -- Создаем меню
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SimpleCheatMenu"
+screenGui.Name = "FixedCheatMenu"
 screenGui.Parent = CoreGui
 
 local mainFrame = Instance.new("Frame")
@@ -29,12 +29,18 @@ title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 title.BorderSizePixel = 0
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Font = Enum.Font.SourceSansBold
-title.Text = "SIMPLE CHEATS"
+title.Text = "FIXED CHEATS"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 14
 
--- Функции
-local function createButton(text, position, callback)
+-- Переменные для статуса
+local speedEnabled = false
+local jumpEnabled = false
+local noclipEnabled = false
+local flyEnabled = false
+
+-- Функция для создания кнопок
+local function createButton(text, position)
     local button = Instance.new("TextButton")
     button.Parent = mainFrame
     button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
@@ -46,68 +52,84 @@ local function createButton(text, position, callback)
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
     button.TextSize = 12
     
-    button.MouseButton1Click:Connect(callback)
     return button
 end
 
--- 1. SPEED HACK (самая простая функция)
-local speedEnabled = false
-local speedBtn = createButton("SPEED: OFF", UDim2.new(0.05, 0, 0.2, 0), function()
+-- 1. SPEED HACK
+local speedBtn = createButton("SPEED: OFF", UDim2.new(0.05, 0, 0.2, 0))
+speedBtn.MouseButton1Click:Connect(function()
     speedEnabled = not speedEnabled
-    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    
     if humanoid then
         if speedEnabled then
             humanoid.WalkSpeed = 50
             speedBtn.Text = "SPEED: ON"
-            print("Speed ON - WalkSpeed: 50")
+            speedBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+            print("✅ Speed ON - WalkSpeed: 50")
         else
             humanoid.WalkSpeed = 16
             speedBtn.Text = "SPEED: OFF"
-            print("Speed OFF - WalkSpeed: 16")
+            speedBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            print("❌ Speed OFF - WalkSpeed: 16")
         end
     else
-        print("No humanoid found!")
+        print("⚠️ No humanoid found for speed!")
     end
 end)
 
 -- 2. JUMP POWER
-local jumpEnabled = false
-local jumpBtn = createButton("JUMP: OFF", UDim2.new(0.05, 0, 0.4, 0), function()
+local jumpBtn = createButton("JUMP: OFF", UDim2.new(0.05, 0, 0.4, 0))
+jumpBtn.MouseButton1Click:Connect(function()
     jumpEnabled = not jumpEnabled
-    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    
     if humanoid then
         if jumpEnabled then
             humanoid.JumpPower = 100
             jumpBtn.Text = "JUMP: ON"
-            print("Jump ON - JumpPower: 100")
+            jumpBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+            print("✅ Jump ON - JumpPower: 100")
         else
             humanoid.JumpPower = 50
             jumpBtn.Text = "JUMP: OFF"
-            print("Jump OFF - JumpPower: 50")
+            jumpBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            print("❌ Jump OFF - JumpPower: 50")
         end
     else
-        print("No humanoid found!")
+        print("⚠️ No humanoid found for jump!")
     end
 end)
 
 -- 3. NOCLIP
-local noclipEnabled = false
-local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.6, 0), function()
+local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.6, 0))
+noclipBtn.MouseButton1Click:Connect(function()
     noclipEnabled = not noclipEnabled
-    noclipBtn.Text = noclipEnabled and "NOCLIP: ON" or "NOCLIP: OFF"
-    print("NoClip: " .. (noclipEnabled and "ON" or "OFF"))
     
     if noclipEnabled then
+        noclipBtn.Text = "NOCLIP: ON"
+        noclipBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        print("✅ NoClip ON")
+        
         -- Включить ноклип
-        local character = player.Character
-        if character then
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
+        spawn(function()
+            while noclipEnabled do
+                local character = player.Character
+                if character then
+                    for _, part in pairs(character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
                 end
+                wait(0.1)
             end
-        end
+        end)
     else
+        noclipBtn.Text = "NOCLIP: OFF"
+        noclipBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        print("❌ NoClip OFF")
+        
         -- Выключить ноклип
         local character = player.Character
         if character then
@@ -121,14 +143,17 @@ local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.6, 0), functi
 end)
 
 -- 4. FLY
-local flyEnabled = false
+local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.8, 0))
 local flyBodyVelocity
-local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.8, 0), function()
+
+flyBtn.MouseButton1Click:Connect(function()
     flyEnabled = not flyEnabled
-    flyBtn.Text = flyEnabled and "FLY: ON" or "FLY: OFF"
-    print("Fly: " .. (flyEnabled and "ON" or "OFF"))
     
     if flyEnabled then
+        flyBtn.Text = "FLY: ON"
+        flyBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        print("✅ Fly ON")
+        
         -- Включить полет
         local character = player.Character
         if character and character:FindFirstChild("HumanoidRootPart") then
@@ -150,15 +175,22 @@ local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.8, 0), function()
                     if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
                     if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
                     
-                    flyBodyVelocity.Velocity = moveDir * 50
-                    RunService.Heartbeat:Wait()
+                    if flyBodyVelocity then
+                        flyBodyVelocity.Velocity = moveDir * 50
+                    end
+                    wait()
                 end
             end)
         end
     else
+        flyBtn.Text = "FLY: OFF"
+        flyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        print("❌ Fly OFF")
+        
         -- Выключить полет
         if flyBodyVelocity then
             flyBodyVelocity:Destroy()
+            flyBodyVelocity = nil
         end
     end
 end)
@@ -169,20 +201,20 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     
     if input.KeyCode == Enum.KeyCode.Insert then
         mainFrame.Visible = not mainFrame.Visible
-        print("Menu: " .. (mainFrame.Visible and "SHOWN" or "HIDDEN"))
+        print("📋 Menu: " .. (mainFrame.Visible and "SHOWN" or "HIDDEN"))
     elseif input.KeyCode == Enum.KeyCode.Delete then
         screenGui:Destroy()
-        print("Menu destroyed")
+        print("🗑️ Menu destroyed")
     end
 end)
 
-print("✅ Simple Cheat Menu Loaded!")
-print("📝 Controls: Insert (Show/Hide), Delete (Close)")
-print("🎮 Test Speed first - it should work immediately!")
+print("✅ Fixed Cheat Menu Loaded!")
+print("📝 Insert - Show/Hide, Delete - Close")
+print("🎮 Buttons should change color and text now!")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "CHEAT MENU LOADED",
-    Text = "Insert: Show/Hide | Test Speed first!",
+    Title = "FIXED MENU LOADED",
+    Text = "Buttons change color when ON/OFF",
     Duration = 5
 })

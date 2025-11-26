@@ -19,7 +19,7 @@ local currentTab = "Fly"
 local tpwalking = false
 
 -- Создание основного GUI
-main.Name = "AdvancedFlyGui"
+main.Name = "Script"
 main.Parent = CoreGui
 main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 main.ResetOnSpawn = false
@@ -59,7 +59,7 @@ TitleLabel.Parent = TitleFrame
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Size = UDim2.new(1, -80, 1, 0)
 TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.Text = "ADVANCED FLY GUI V4"
+TitleLabel.Text = "SCRIPT"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.TextSize = 16
 
@@ -294,10 +294,10 @@ local ESPContent = tabFrames.ESP
 
 local ESPToggle = createButton(ESPContent, "Enable ESP", UDim2.new(0.1, 0, 0.1, 0), UDim2.new(0.8, 0, 0, 40), tabs.ESP.color)
 
-local ESPPlayers = createButton(ESPContent, "Players ESP", UDim2.new(0.1, 0, 0.3, 0), UDim2.new(0.8, 0, 0, 30), Color3.fromRGB(86, 156, 214))
-local ESPItems = createButton(ESPContent, "Items ESP", UDim2.new(0.1, 0, 0.45, 0), UDim2.new(0.8, 0, 0, 30), Color3.fromRGB(214, 156, 86))
+local ESPNamesToggle = createButton(ESPContent, "Name Tags", UDim2.new(0.1, 0, 0.3, 0), UDim2.new(0.8, 0, 0, 30), Color3.fromRGB(86, 156, 214))
+local ESPBoxesToggle = createButton(ESPContent, "Boxes", UDim2.new(0.1, 0, 0.45, 0), UDim2.new(0.8, 0, 0, 30), Color3.fromRGB(214, 156, 86))
 
-local ESPInfo = createLabel(ESPContent, "Highlight players and items in the world", UDim2.new(0.1, 0, 0.7, 0), UDim2.new(0.8, 0, 0, 50))
+local ESPInfo = createLabel(ESPContent, "Highlight players with name tags", UDim2.new(0.1, 0, 0.7, 0), UDim2.new(0.8, 0, 0, 50))
 ESPInfo.TextWrapped = true
 ESPInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
 
@@ -307,7 +307,7 @@ local SettingsContent = tabFrames.Settings
 local ToggleGUIKey = createButton(SettingsContent, "GUI Key: Insert", UDim2.new(0.1, 0, 0.1, 0), UDim2.new(0.8, 0, 0, 30), tabs.Settings.color)
 local ResetSettings = createButton(SettingsContent, "Reset Settings", UDim2.new(0.1, 0, 0.3, 0), UDim2.new(0.8, 0, 0, 30), Color3.fromRGB(214, 86, 86))
 
-local SettingsInfo = createLabel(SettingsContent, "Advanced Fly GUI V4\nBy XNEO", UDim2.new(0.1, 0, 0.7, 0), UDim2.new(0.8, 0, 0, 80))
+local SettingsInfo = createLabel(SettingsContent, "SCRIPT\nBy XNEO", UDim2.new(0.1, 0, 0.7, 0), UDim2.new(0.8, 0, 0, 80))
 SettingsInfo.TextWrapped = true
 SettingsInfo.TextColor3 = Color3.fromRGB(200, 200, 200)
 
@@ -539,22 +539,54 @@ local function disableNoClip()
     end
 end
 
--- СИСТЕМА ESP
+-- СИСТЕМА ESP С NAME TAGS
 local espHighlights = {}
+local espBillboards = {}
+local showNames = true
+local showBoxes = true
 
 local function createESP(targetPlayer)
     if not targetPlayer or not targetPlayer.Character then return end
     
+    local character = targetPlayer.Character
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    
+    -- Highlight (бокс)
     local highlight = Instance.new("Highlight")
     highlight.Name = "ESP_Highlight"
-    highlight.Parent = targetPlayer.Character
-    highlight.Adornee = targetPlayer.Character
+    highlight.Parent = character
+    highlight.Adornee = character
     highlight.FillColor = targetPlayer.Team and targetPlayer.TeamColor.Color or Color3.fromRGB(255, 0, 0)
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
     highlight.FillTransparency = 0.7
     highlight.OutlineTransparency = 0
+    highlight.Enabled = showBoxes
+    
+    -- Name Tag (BillboardGui)
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESP_NameTag"
+    billboard.Parent = character
+    billboard.Adornee = humanoidRootPart
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Parent = billboard
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Size = UDim2.new(1, 0, 1, 0)
+    nameLabel.Font = Enum.Font.SourceSansBold
+    nameLabel.Text = targetPlayer.Name
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameLabel.TextStrokeTransparency = 0
+    nameLabel.TextSize = 14
+    nameLabel.Visible = showNames
     
     espHighlights[targetPlayer] = highlight
+    espBillboards[targetPlayer] = billboard
 end
 
 local function enableESP()
@@ -602,7 +634,33 @@ local function disableESP()
             highlight:Destroy()
         end
     end
+    
+    for _, billboard in pairs(espBillboards) do
+        if billboard then
+            billboard:Destroy()
+        end
+    end
+    
     espHighlights = {}
+    espBillboards = {}
+end
+
+-- Функция для обновления видимости ESP элементов
+local function updateESPVisibility()
+    for targetPlayer, highlight in pairs(espHighlights) do
+        if highlight then
+            highlight.Enabled = showBoxes
+        end
+    end
+    
+    for targetPlayer, billboard in pairs(espBillboards) do
+        if billboard then
+            local nameLabel = billboard:FindFirstChild("NameLabel")
+            if nameLabel then
+                nameLabel.Visible = showNames
+            end
+        end
+    end
 end
 
 -- ОБРАБОТЧИКИ КНОПОК
@@ -628,6 +686,19 @@ ESPToggle.MouseButton1Click:Connect(function()
     else
         enableESP()
     end
+end)
+
+-- Кнопки для управления ESP
+ESPNamesToggle.MouseButton1Click:Connect(function()
+    showNames = not showNames
+    ESPNamesToggle.Text = showNames and "Name Tags: ON" or "Name Tags: OFF"
+    updateESPVisibility()
+end)
+
+ESPBoxesToggle.MouseButton1Click:Connect(function()
+    showBoxes = not showBoxes
+    ESPBoxesToggle.Text = showBoxes and "Boxes: ON" or "Boxes: OFF"
+    updateESPVisibility()
 end)
 
 SpeedPlus.MouseButton1Click:Connect(function()
@@ -741,10 +812,10 @@ switchTab("Fly")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "ADVANCED FLY GUI V4",
+    Title = "SCRIPT LOADED",
     Text = "Loaded successfully! Insert - Toggle GUI",
     Duration = 5
 })
 
-print("Advanced Fly GUI V4 loaded!")
+print("SCRIPT loaded!")
 print("Controls: Insert - GUI, Delete - Quick Off, End - Unload")

@@ -1,205 +1,750 @@
--- Простой чит скрипт
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
+local main = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local TabButtonsFrame = Instance.new("Frame")
+local ContentFrame = Instance.new("Frame")
 
-print("=== SIMPLE CHEAT LOADED ===")
+-- Настройки
+local speeds = 1
+local isFlying = false
+local isNoClip = false
+local isESPEnabled = false
+local currentTab = "Fly"
+local tpwalking = false
 
--- FLIGHT
-local flying = false
-local flightBodyVelocity
+-- Создание основного GUI
+main.Name = "AdvancedFlyGui"
+main.Parent = CoreGui
+main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+main.ResetOnSpawn = false
 
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.F then
-        flying = not flying
-        print("Flight: " .. (flying and "ON" or "OFF"))
-        
-        if flying then
-            -- Включить полет
-            local character = player.Character
-            if character and character:FindFirstChild("HumanoidRootPart") then
-                flightBodyVelocity = Instance.new("BodyVelocity")
-                flightBodyVelocity.Velocity = Vector3.new(0, 0, 0)
-                flightBodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
-                flightBodyVelocity.Parent = character.HumanoidRootPart
-                
-                -- Двигаем персонажа
-                while flying and character do
-                    local cam = workspace.CurrentCamera
-                    local moveDir = Vector3.new(0, 0, 0)
-                    
-                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
-                    
-                    flightBodyVelocity.Velocity = moveDir * 50
-                    RunService.Heartbeat:Wait()
-                end
-            end
-        else
-            -- Выключить полет
-            if flightBodyVelocity then
-                flightBodyVelocity:Destroy()
-                flightBodyVelocity = nil
-            end
-        end
-    end
-end)
+-- Главный фрейм
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = main
+MainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.1, 0, 0.3, 0)
+MainFrame.Size = UDim2.new(0, 350, 0, 400)
+MainFrame.Active = true
+MainFrame.Draggable = true
 
--- NOCLIP
-local noclip = false
+-- Создаем тень
+local Shadow = Instance.new("Frame")
+Shadow.Name = "Shadow"
+Shadow.Parent = MainFrame
+Shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Shadow.BackgroundTransparency = 0.8
+Shadow.BorderSizePixel = 0
+Shadow.Position = UDim2.new(0, 5, 0, 5)
+Shadow.Size = UDim2.new(1, 0, 1, 0)
+Shadow.ZIndex = -1
 
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.V then
-        noclip = not noclip
-        print("NoClip: " .. (noclip and "ON" or "OFF"))
-        
-        if noclip then
-            -- Включить ноклип
-            while noclip do
-                local character = player.Character
-                if character then
-                    for _, part in pairs(character:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                        end
-                    end
-                end
-                RunService.Heartbeat:Wait()
-            end
-        else
-            -- Выключить ноклип
-            local character = player.Character
-            if character then
-                for _, part in pairs(character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = true
-                    end
-                end
-            end
-        end
-    end
-end)
+-- Заголовок
+local TitleFrame = Instance.new("Frame")
+TitleFrame.Name = "TitleFrame"
+TitleFrame.Parent = MainFrame
+TitleFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+TitleFrame.BorderSizePixel = 0
+TitleFrame.Size = UDim2.new(1, 0, 0, 40)
 
--- SPEED HACK
-local speedHack = false
-local originalSpeed = 16
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Parent = TitleFrame
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Size = UDim2.new(1, -80, 1, 0)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Text = "ADVANCED FLY GUI V4"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 16
 
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.G then
-        speedHack = not speedHack
-        print("Speed Hack: " .. (speedHack and "ON" or "OFF"))
-        
-        local character = player.Character
-        if character then
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                if speedHack then
-                    originalSpeed = humanoid.WalkSpeed
-                    humanoid.WalkSpeed = 50
-                else
-                    humanoid.WalkSpeed = originalSpeed
-                end
-            end
-        end
-    end
-end)
+-- Кнопки управления окном
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Parent = TitleFrame
+CloseButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+CloseButton.BorderSizePixel = 0
+CloseButton.Position = UDim2.new(1, -30, 0.5, -10)
+CloseButton.Size = UDim2.new(0, 20, 0, 20)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 12
 
--- ESP
-local espEnabled = false
-local highlights = {}
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Parent = TitleFrame
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(255, 180, 60)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.Position = UDim2.new(1, -60, 0.5, -10)
+MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.Text = "_"
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeButton.TextSize = 12
 
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.X then
-        espEnabled = not espEnabled
-        print("ESP: " .. (espEnabled and "ON" or "OFF"))
-        
-        if espEnabled then
-            -- Включить ESP
-            for _, otherPlayer in pairs(Players:GetPlayers()) do
-                if otherPlayer ~= player then
-                    if otherPlayer.Character then
-                        addESP(otherPlayer)
-                    end
-                    otherPlayer.CharacterAdded:Connect(function(char)
-                        if espEnabled then
-                            wait(1)
-                            addESP(otherPlayer)
-                        end
-                    end)
-                end
-            end
-        else
-            -- Выключить ESP
-            for player, highlight in pairs(highlights) do
-                if highlight then
-                    highlight:Destroy()
-                end
-            end
-            highlights = {}
-        end
-    end
-end)
+-- Фрейм для кнопок вкладок
+TabButtonsFrame.Name = "TabButtonsFrame"
+TabButtonsFrame.Parent = MainFrame
+TabButtonsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TabButtonsFrame.BorderSizePixel = 0
+TabButtonsFrame.Position = UDim2.new(0, 0, 0, 40)
+TabButtonsFrame.Size = UDim2.new(0, 100, 0, 360)
 
-function addESP(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character then return end
+-- Фрейм для контента
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Parent = MainFrame
+ContentFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ContentFrame.BorderSizePixel = 0
+ContentFrame.Position = UDim2.new(0, 100, 0, 40)
+ContentFrame.Size = UDim2.new(0, 250, 0, 360)
+
+-- Вспомогательные функции
+local function createButton(parent, text, position, size, color)
+    local button = Instance.new("TextButton")
+    button.Parent = parent
+    button.BackgroundColor3 = color
+    button.BorderSizePixel = 0
+    button.Position = position
+    button.Size = size
+    button.Font = Enum.Font.Gotham
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 12
+    button.AutoButtonColor = false
     
-    local character = targetPlayer.Character
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = button
     
-    if humanoid then
-        local highlight = Instance.new("Highlight")
-        highlight.FillColor = Color3.new(1, 0, 0)
-        highlight.OutlineColor = Color3.new(1, 1, 1)
-        highlight.FillTransparency = 0.5
-        highlight.OutlineTransparency = 0
-        highlight.Parent = character
-        highlight.Adornee = character
-        
-        highlights[targetPlayer] = highlight
-        
-        -- Обновляем позицию
-        while espEnabled and character and highlight do
-            highlight.Adornee = character
-            RunService.Heartbeat:Wait()
+    -- Эффект при наведении
+    button.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(
+            math.min(color.R * 255 + 20, 255),
+            math.min(color.G * 255 + 20, 255), 
+            math.min(color.B * 255 + 20, 255)
+        )}):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {BackgroundColor3 = color}):Play()
+    end)
+    
+    -- Эффект при нажатии
+    button.MouseButton1Down:Connect(function()
+        game:GetService("TweenService"):Create(button, TweenInfo.new(0.1), {Size = size - UDim2.new(0, 4, 0, 4)}):Play()
+    end)
+    
+    button.MouseButton1Up:Connect(function()
+        game:GetService("TweenService"):Create(button, TweenInfo.new(0.1), {Size = size}):Play()
+    end)
+    
+    return button
+end
+
+local function createLabel(parent, text, position, size)
+    local label = Instance.new("TextLabel")
+    label.Parent = parent
+    label.BackgroundTransparency = 1
+    label.Position = position
+    label.Size = size
+    label.Font = Enum.Font.Gotham
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 12
+    label.TextXAlignment = Enum.TextXAlignment.Center
+    
+    return label
+end
+
+-- Создаем вкладки
+local tabs = {
+    Fly = {
+        name = "Fly",
+        color = Color3.fromRGB(86, 156, 214),
+        icon = "✈️"
+    },
+    NoClip = {
+        name = "NoClip", 
+        color = Color3.fromRGB(106, 214, 86),
+        icon = "👻"
+    },
+    ESP = {
+        name = "ESP",
+        color = Color3.fromRGB(214, 86, 186), 
+        icon = "👁️"
+    },
+    Settings = {
+        name = "Settings",
+        color = Color3.fromRGB(214, 174, 86),
+        icon = "⚙️"
+    }
+}
+
+local tabButtons = {}
+local tabFrames = {}
+
+-- Функция переключения вкладок
+local function switchTab(tabName)
+    currentTab = tabName
+    
+    -- Скрываем все фреймы контента
+    for name, frame in pairs(tabFrames) do
+        frame.Visible = false
+    end
+    
+    -- Убираем подсветку со всех кнопок
+    for name, button in pairs(tabButtons) do
+        button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        if button:FindFirstChild("Highlight") then
+            button.Highlight.Visible = false
+        end
+    end
+    
+    -- Показываем выбранную вкладку
+    if tabFrames[tabName] then
+        tabFrames[tabName].Visible = true
+    end
+    if tabButtons[tabName] then
+        tabButtons[tabName].BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+        if tabButtons[tabName]:FindFirstChild("Highlight") then
+            tabButtons[tabName].Highlight.Visible = true
         end
     end
 end
 
--- ANTI-AFK
-local antiAFK = false
+-- Функция для создания кнопки вкладки
+local function createTabButton(tabName, tabData, index)
+    local button = Instance.new("TextButton")
+    button.Name = tabName .. "Tab"
+    button.Parent = TabButtonsFrame
+    button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    button.BorderSizePixel = 0
+    button.Position = UDim2.new(0, 0, 0, (index-1) * 60)
+    button.Size = UDim2.new(1, 0, 0, 60)
+    button.Font = Enum.Font.Gotham
+    button.Text = tabData.icon .. "\n" .. tabData.name
+    button.TextColor3 = Color3.fromRGB(200, 200, 200)
+    button.TextSize = 12
+    button.TextWrapped = true
+    
+    local highlight = Instance.new("Frame")
+    highlight.Name = "Highlight"
+    highlight.Parent = button
+    highlight.BackgroundColor3 = tabData.color
+    highlight.BorderSizePixel = 0
+    highlight.Size = UDim2.new(0, 4, 1, 0)
+    highlight.Visible = false
+    
+    tabButtons[tabName] = button
+    
+    -- Фрейм контента для вкладки
+    local contentFrame = Instance.new("Frame")
+    contentFrame.Name = tabName .. "Content"
+    contentFrame.Parent = ContentFrame
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.Size = UDim2.new(1, 0, 1, 0)
+    contentFrame.Visible = false
+    
+    tabFrames[tabName] = contentFrame
+    
+    button.MouseButton1Click:Connect(function()
+        switchTab(tabName)
+    end)
+    
+    return button
+end
 
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.H then
-        antiAFK = not antiAFK
-        print("Anti-AFK: " .. (antiAFK and "ON" or "OFF"))
+-- Создаем вкладки
+local index = 1
+for tabName, tabData in pairs(tabs) do
+    createTabButton(tabName, tabData, index)
+    index += 1
+end
+
+-- Содержимое вкладки Fly
+local FlyContent = tabFrames.Fly
+
+local FlyToggle = createButton(FlyContent, "Enable Fly", UDim2.new(0.1, 0, 0.1, 0), UDim2.new(0.8, 0, 0, 40), tabs.Fly.color)
+
+local SpeedLabel = createLabel(FlyContent, "Flight Speed: 1", UDim2.new(0.1, 0, 0.3, 0), UDim2.new(0.8, 0, 0, 20))
+
+local SpeedMinus = createButton(FlyContent, "-", UDim2.new(0.1, 0, 0.4, 0), UDim2.new(0.35, 0, 0, 30), Color3.fromRGB(100, 100, 100))
+local SpeedPlus = createButton(FlyContent, "+", UDim2.new(0.55, 0, 0.4, 0), UDim2.new(0.35, 0, 0, 30), Color3.fromRGB(100, 100, 100))
+
+local UpButton = createButton(FlyContent, "↑ UP", UDim2.new(0.3, 0, 0.6, 0), UDim2.new(0.4, 0, 0, 30), Color3.fromRGB(86, 214, 86))
+local DownButton = createButton(FlyContent, "↓ DOWN", UDim2.new(0.3, 0, 0.75, 0), UDim2.new(0.4, 0, 0, 30), Color3.fromRGB(214, 86, 86))
+
+-- Содержимое вкладки NoClip
+local NoClipContent = tabFrames.NoClip
+
+local NoClipToggle = createButton(NoClipContent, "Enable NoClip", UDim2.new(0.1, 0, 0.2, 0), UDim2.new(0.8, 0, 0, 40), tabs.NoClip.color)
+
+local NoClipInfo = createLabel(NoClipContent, "Walk through walls and objects", UDim2.new(0.1, 0, 0.5, 0), UDim2.new(0.8, 0, 0, 50))
+NoClipInfo.TextWrapped = true
+NoClipInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
+
+-- Содержимое вкладки ESP
+local ESPContent = tabFrames.ESP
+
+local ESPToggle = createButton(ESPContent, "Enable ESP", UDim2.new(0.1, 0, 0.1, 0), UDim2.new(0.8, 0, 0, 40), tabs.ESP.color)
+
+local ESPPlayers = createButton(ESPContent, "Players ESP", UDim2.new(0.1, 0, 0.3, 0), UDim2.new(0.8, 0, 0, 30), Color3.fromRGB(86, 156, 214))
+local ESPItems = createButton(ESPContent, "Items ESP", UDim2.new(0.1, 0, 0.45, 0), UDim2.new(0.8, 0, 0, 30), Color3.fromRGB(214, 156, 86))
+
+local ESPInfo = createLabel(ESPContent, "Highlight players and items in the world", UDim2.new(0.1, 0, 0.7, 0), UDim2.new(0.8, 0, 0, 50))
+ESPInfo.TextWrapped = true
+ESPInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
+
+-- Содержимое вкладки Settings
+local SettingsContent = tabFrames.Settings
+
+local ToggleGUIKey = createButton(SettingsContent, "GUI Key: Insert", UDim2.new(0.1, 0, 0.1, 0), UDim2.new(0.8, 0, 0, 30), tabs.Settings.color)
+local ResetSettings = createButton(SettingsContent, "Reset Settings", UDim2.new(0.1, 0, 0.3, 0), UDim2.new(0.8, 0, 0, 30), Color3.fromRGB(214, 86, 86))
+
+local SettingsInfo = createLabel(SettingsContent, "Advanced Fly GUI V4\nBy XNEO", UDim2.new(0.1, 0, 0.7, 0), UDim2.new(0.8, 0, 0, 80))
+SettingsInfo.TextWrapped = true
+SettingsInfo.TextColor3 = Color3.fromRGB(200, 200, 200)
+
+-- СИСТЕМА ПОЛЕТА
+local flightConnections = {}
+local flightParts = {}
+
+local function enableFlight()
+    if isFlying then return end
+    
+    local character = player.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+    if not humanoid then return end
+    
+    isFlying = true
+    FlyToggle.Text = "Disable Fly"
+    FlyToggle.BackgroundColor3 = Color3.fromRGB(214, 86, 86)
+    
+    -- Отключаем анимации
+    if character:FindFirstChild("Animate") then
+        character.Animate.Disabled = true
+    end
+    
+    -- Включаем телепортационное движение
+    tpwalking = true
+    for i = 1, speeds do
+        spawn(function()
+            local chr = player.Character
+            local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+            while tpwalking and RunService.Heartbeat:Wait() and chr and hum and hum.Parent do
+                if hum.MoveDirection.Magnitude > 0 then
+                    chr:TranslateBy(hum.MoveDirection)
+                end
+            end
+        end)
+    end
+    
+    -- Отключаем состояния человечка
+    for _, state in pairs(Enum.HumanoidStateType:GetEnumItems()) do
+        humanoid:SetStateEnabled(state, false)
+    end
+    humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+    
+    -- Создаем физику полета
+    local rootPart = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+    if not rootPart then return end
+    
+    local bg = Instance.new("BodyGyro")
+    bg.P = 9e4
+    bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bg.cframe = rootPart.CFrame
+    bg.Parent = rootPart
+    
+    local bv = Instance.new("BodyVelocity")
+    bv.velocity = Vector3.new(0, 0.1, 0)
+    bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+    bv.Parent = rootPart
+    
+    humanoid.PlatformStand = true
+    
+    -- Управление полетом
+    local ctrl = {f = 0, b = 0, l = 0, r = 0}
+    local lastCtrl = {f = 0, b = 0, l = 0, r = 0}
+    local maxSpeed = 50
+    local currentSpeed = 0
+    
+    local flightConnection
+    flightConnection = RunService.Heartbeat:Connect(function()
+        if not isFlying or not character or humanoid.Health <= 0 then
+            if flightConnection then
+                flightConnection:Disconnect()
+            end
+            return
+        end
         
-        if antiAFK then
-            local virtualUser = game:GetService("VirtualUser")
-            game:GetService("Players").LocalPlayer.Idled:connect(function()
-                virtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                wait(1)
-                virtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        -- Обновление скорости
+        if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+            currentSpeed = math.min(currentSpeed + 0.5 + (currentSpeed / maxSpeed), maxSpeed)
+        elseif currentSpeed > 0 then
+            currentSpeed = math.max(currentSpeed - 1, 0)
+        end
+        
+        -- Расчет движения
+        if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+            local cam = workspace.CurrentCamera
+            bv.velocity = ((cam.CFrame.lookVector * (ctrl.f + ctrl.b)) + 
+                          ((cam.CFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * 0.2, 0).p) - cam.CFrame.p)) * currentSpeed
+            lastCtrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+        elseif currentSpeed > 0 then
+            local cam = workspace.CurrentCamera
+            bv.velocity = ((cam.CFrame.lookVector * (lastCtrl.f + lastCtrl.b)) + 
+                          ((cam.CFrame * CFrame.new(lastCtrl.l + lastCtrl.r, (lastCtrl.f + lastCtrl.b) * 0.2, 0).p) - cam.CFrame.p)) * currentSpeed
+        else
+            bv.velocity = Vector3.new(0, 0, 0)
+        end
+        
+        -- Поворот
+        bg.cframe = workspace.CurrentCamera.CFrame * CFrame.Angles(-math.rad((ctrl.f + ctrl.b) * 50 * currentSpeed / maxSpeed), 0, 0)
+    end)
+    
+    -- Обработка ввода
+    local inputConnection
+    inputConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.KeyCode == Enum.KeyCode.W then
+            ctrl.f = 1
+        elseif input.KeyCode == Enum.KeyCode.S then
+            ctrl.b = -1
+        elseif input.KeyCode == Enum.KeyCode.A then
+            ctrl.l = -1
+        elseif input.KeyCode == Enum.KeyCode.D then
+            ctrl.r = 1
+        end
+    end)
+    
+    local inputEndedConnection
+    inputEndedConnection = UserInputService.InputEnded:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.KeyCode == Enum.KeyCode.W then
+            ctrl.f = 0
+        elseif input.KeyCode == Enum.KeyCode.S then
+            ctrl.b = 0
+        elseif input.KeyCode == Enum.KeyCode.A then
+            ctrl.l = 0
+        elseif input.KeyCode == Enum.KeyCode.D then
+            ctrl.r = 0
+        end
+    end)
+    
+    -- Сохраняем соединения для очистки
+    flightConnections = {flightConnection, inputConnection, inputEndedConnection}
+    flightParts = {bg, bv}
+end
+
+local function disableFlight()
+    if not isFlying then return end
+    
+    isFlying = false
+    tpwalking = false
+    FlyToggle.Text = "Enable Fly"
+    FlyToggle.BackgroundColor3 = tabs.Fly.color
+    
+    local character = player.Character
+    if not character then return end
+    
+    -- Восстанавливаем анимации
+    if character:FindFirstChild("Animate") then
+        character.Animate.Disabled = false
+    end
+    
+    -- Восстанавливаем состояния человечка
+    local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+    if humanoid then
+        for _, state in pairs(Enum.HumanoidStateType:GetEnumItems()) do
+            humanoid:SetStateEnabled(state, true)
+        end
+        humanoid.PlatformStand = false
+        humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    end
+    
+    -- Удаляем физику полета
+    for _, conn in pairs(flightConnections) do
+        if conn then
+            conn:Disconnect()
+        end
+    end
+    
+    for _, part in pairs(flightParts) do
+        if part then
+            part:Destroy()
+        end
+    end
+    
+    flightConnections = {}
+    flightParts = {}
+end
+
+-- СИСТЕМА NOCLIP
+local noClipConnection
+
+local function enableNoClip()
+    if isNoClip then return end
+    
+    isNoClip = true
+    NoClipToggle.Text = "Disable NoClip"
+    NoClipToggle.BackgroundColor3 = Color3.fromRGB(214, 86, 86)
+    
+    local character = player.Character
+    if not character then return end
+    
+    noClipConnection = RunService.Stepped:Connect(function()
+        if not isNoClip or not character then
+            if noClipConnection then
+                noClipConnection:Disconnect()
+            end
+            return
+        end
+        
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end)
+end
+
+local function disableNoClip()
+    if not isNoClip then return end
+    
+    isNoClip = false
+    NoClipToggle.Text = "Enable NoClip"
+    NoClipToggle.BackgroundColor3 = tabs.NoClip.color
+    
+    if noClipConnection then
+        noClipConnection:Disconnect()
+    end
+    
+    local character = player.Character
+    if character then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+end
+
+-- СИСТЕМА ESP
+local espHighlights = {}
+
+local function createESP(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
+    
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESP_Highlight"
+    highlight.Parent = targetPlayer.Character
+    highlight.Adornee = targetPlayer.Character
+    highlight.FillColor = targetPlayer.Team and targetPlayer.TeamColor.Color or Color3.fromRGB(255, 0, 0)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.7
+    highlight.OutlineTransparency = 0
+    
+    espHighlights[targetPlayer] = highlight
+end
+
+local function enableESP()
+    if isESPEnabled then return end
+    
+    isESPEnabled = true
+    ESPToggle.Text = "Disable ESP"
+    ESPToggle.BackgroundColor3 = Color3.fromRGB(214, 86, 86)
+    
+    -- ESP для игроков
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player then
+            if otherPlayer.Character then
+                createESP(otherPlayer)
+            end
+            otherPlayer.CharacterAdded:Connect(function(character)
+                if isESPEnabled then
+                    wait(1)
+                    createESP(otherPlayer)
+                end
             end)
         end
     end
+    
+    -- Обработка новых игроков
+    Players.PlayerAdded:Connect(function(newPlayer)
+        if isESPEnabled then
+            newPlayer.CharacterAdded:Connect(function(character)
+                wait(1)
+                createESP(newPlayer)
+            end)
+        end
+    end)
+end
+
+local function disableESP()
+    if not isESPEnabled then return end
+    
+    isESPEnabled = false
+    ESPToggle.Text = "Enable ESP"
+    ESPToggle.BackgroundColor3 = tabs.ESP.color
+    
+    for _, highlight in pairs(espHighlights) do
+        if highlight then
+            highlight:Destroy()
+        end
+    end
+    espHighlights = {}
+end
+
+-- ОБРАБОТЧИКИ КНОПОК
+FlyToggle.MouseButton1Click:Connect(function()
+    if isFlying then
+        disableFlight()
+    else
+        enableFlight()
+    end
 end)
 
-print("Горячие клавиши:")
-print("F - Полет")
-print("V - NoClip") 
-print("G - Скорость")
-print("X - ESP")
-print("H - Anti-AFK")
+NoClipToggle.MouseButton1Click:Connect(function()
+    if isNoClip then
+        disableNoClip()
+    else
+        enableNoClip()
+    end
+end)
+
+ESPToggle.MouseButton1Click:Connect(function()
+    if isESPEnabled then
+        disableESP()
+    else
+        enableESP()
+    end
+end)
+
+SpeedPlus.MouseButton1Click:Connect(function()
+    speeds = math.min(speeds + 1, 10)
+    SpeedLabel.Text = "Flight Speed: " .. speeds
+    if isFlying then
+        disableFlight()
+        wait(0.1)
+        enableFlight()
+    end
+end)
+
+SpeedMinus.MouseButton1Click:Connect(function()
+    if speeds > 1 then
+        speeds = math.max(speeds - 1, 1)
+        SpeedLabel.Text = "Flight Speed: " .. speeds
+        if isFlying then
+            disableFlight()
+            wait(0.1)
+            enableFlight()
+        end
+    else
+        SpeedLabel.Text = "MIN: 1"
+        wait(1)
+        SpeedLabel.Text = "Flight Speed: 1"
+    end
+end)
+
+-- Управление по вертикали
+local function createVerticalMovement(button, direction)
+    local connection
+    button.MouseButton1Down:Connect(function()
+        connection = RunService.Heartbeat:Connect(function()
+            local character = player.Character
+            if character and character:FindFirstChild("HumanoidRootPart") then
+                character.HumanoidRootPart.CFrame = character.HumanoidRootPart.CFrame * CFrame.new(0, direction * 2, 0)
+            end
+        end)
+    end)
+    
+    button.MouseButton1Up:Connect(function()
+        if connection then
+            connection:Disconnect()
+            connection = nil
+        end
+    end)
+end
+
+createVerticalMovement(UpButton, 1)
+createVerticalMovement(DownButton, -1)
+
+-- Управление окном
+CloseButton.MouseButton1Click:Connect(function()
+    disableFlight()
+    disableNoClip()
+    disableESP()
+    main:Destroy()
+end)
+
+local isMinimized = false
+MinimizeButton.MouseButton1Click:Connect(function()
+    if isMinimized then
+        -- Разворачиваем
+        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 350, 0, 400)}):Play()
+        MinimizeButton.Text = "_"
+        isMinimized = false
+    else
+        -- Сворачиваем
+        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 350, 0, 40)}):Play()
+        MinimizeButton.Text = "+"
+        isMinimized = true
+    end
+end)
+
+-- ГОРЯЧИЕ КЛАВИШИ
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Enum.KeyCode.Insert then
+        MainFrame.Visible = not MainFrame.Visible
+    elseif input.KeyCode == Enum.KeyCode.Delete then
+        if isFlying then 
+            disableFlight() 
+        end
+        if isNoClip then 
+            disableNoClip() 
+        end
+    elseif input.KeyCode == Enum.KeyCode.End then
+        disableFlight()
+        disableNoClip()
+        disableESP()
+        main:Destroy()
+    end
+end)
+
+-- Автоматическая очистка при смерти
+player.CharacterAdded:Connect(function(character)
+    wait(1)
+    disableFlight()
+    disableNoClip()
+    
+    local humanoid = character:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        disableFlight()
+        disableNoClip()
+    end)
+end)
+
+-- Инициализация
+switchTab("Fly")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "ЧИТЫ ЗАГРУЖЕНЫ",
-    Text = "F-полет, V-ноклип, G-скорость, X-ESP, H-антиафк",
-    Duration = 8
+    Title = "ADVANCED FLY GUI V4",
+    Text = "Loaded successfully! Insert - Toggle GUI",
+    Duration = 5
 })
+
+print("Advanced Fly GUI V4 loaded!")
+print("Controls: Insert - GUI, Delete - Quick Off, End - Unload")

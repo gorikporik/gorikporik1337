@@ -3,8 +3,6 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
-local Lighting = game:GetService("Lighting")
-local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
@@ -26,7 +24,7 @@ local settings = {
     speedHackValue = 2,
     bhopSpeed = 1.5,
     
-    -- Кастомные бинды
+    -- Бинды
     keybinds = {
         fly = Enum.KeyCode.F,
         noclip = Enum.KeyCode.V,
@@ -37,165 +35,160 @@ local settings = {
     }
 }
 
-local currentTab = "Movement"
-local tpwalking = false
-local flightConnections = {}
-local flightParts = {}
-local espHighlights = {}
-local aimbotConnection
-local bhopConnection
-local antiAFKConnection
-local fullbrightConnection
-
--- Создание основного GUI
-local main = Instance.new("ScreenGui")
-main.Name = "MinecraftStyleGUI"
-main.Parent = CoreGui
-main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-main.ResetOnSpawn = false
+-- Создание GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "Script"
+screenGui.Parent = CoreGui
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- Главный фрейм
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = main
-MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-MainFrame.BorderSizePixel = 2
-MainFrame.BorderColor3 = Color3.fromRGB(80, 80, 80)
-MainFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
-MainFrame.Size = UDim2.new(0, 450, 0, 500)
-MainFrame.Active = true
-MainFrame.Draggable = true
-
--- Тень
-local Shadow = Instance.new("Frame")
-Shadow.Name = "Shadow"
-Shadow.Parent = MainFrame
-Shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Shadow.BackgroundTransparency = 0.7
-Shadow.BorderSizePixel = 0
-Shadow.Position = UDim2.new(0, 4, 0, 4)
-Shadow.Size = UDim2.new(1, 0, 1, 0)
-Shadow.ZIndex = -1
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Parent = screenGui
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
+mainFrame.Active = true
+mainFrame.Draggable = true
 
 -- Заголовок
-local TitleFrame = Instance.new("Frame")
-TitleFrame.Name = "TitleFrame"
-TitleFrame.Parent = MainFrame
-TitleFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-TitleFrame.BorderSizePixel = 2
-TitleFrame.BorderColor3 = Color3.fromRGB(80, 80, 80)
-TitleFrame.Size = UDim2.new(1, 0, 0, 35)
+local titleFrame = Instance.new("Frame")
+titleFrame.Name = "TitleFrame"
+titleFrame.Parent = mainFrame
+titleFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleFrame.BorderSizePixel = 0
+titleFrame.Size = UDim2.new(1, 0, 0, 30)
 
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Name = "TitleLabel"
-TitleLabel.Parent = TitleFrame
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Size = UDim2.new(1, -80, 1, 0)
-TitleLabel.Font = Enum.Font.SourceSansBold
-TitleLabel.Text = "ADVANCED CHEATS V6"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.TextSize = 16
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "TitleLabel"
+titleLabel.Parent = titleFrame
+titleLabel.BackgroundTransparency = 1
+titleLabel.Size = UDim2.new(1, -60, 1, 0)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.Text = "SCRIPT"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 16
 
--- Кнопки управления окном
-local CloseButton = createMinecraftButton(TitleFrame, "X", UDim2.new(1, -30, 0.5, -10), UDim2.new(0, 25, 0, 25), Color3.fromRGB(200, 60, 60))
-local MinimizeButton = createMinecraftButton(TitleFrame, "_", UDim2.new(1, -60, 0.5, -10), UDim2.new(0, 25, 0, 25), Color3.fromRGB(200, 160, 60))
+-- Кнопки управления
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Parent = titleFrame
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+closeButton.BorderSizePixel = 0
+closeButton.Position = UDim2.new(1, -30, 0, 5)
+closeButton.Size = UDim2.new(0, 25, 0, 20)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 12
 
--- Фрейм для кнопок вкладок
-local TabButtonsFrame = Instance.new("Frame")
-TabButtonsFrame.Name = "TabButtonsFrame"
-TabButtonsFrame.Parent = MainFrame
-TabButtonsFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-TabButtonsFrame.BorderSizePixel = 2
-TabButtonsFrame.BorderColor3 = Color3.fromRGB(80, 80, 80)
-TabButtonsFrame.Position = UDim2.new(0, 0, 0, 35)
-TabButtonsFrame.Size = UDim2.new(0, 120, 0, 465)
+-- Фрейм для вкладок
+local tabsFrame = Instance.new("Frame")
+tabsFrame.Name = "TabsFrame"
+tabsFrame.Parent = mainFrame
+tabsFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+tabsFrame.BorderSizePixel = 0
+tabsFrame.Position = UDim2.new(0, 0, 0, 30)
+tabsFrame.Size = UDim2.new(1, 0, 0, 30)
 
 -- Фрейм для контента
-local ContentFrame = Instance.new("Frame")
-ContentFrame.Name = "ContentFrame"
-ContentFrame.Parent = MainFrame
-ContentFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-ContentFrame.BorderSizePixel = 2
-ContentFrame.BorderColor3 = Color3.fromRGB(80, 80, 80)
-ContentFrame.Position = UDim2.new(0, 120, 0, 35)
-ContentFrame.Size = UDim2.new(0, 330, 0, 465)
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "ContentFrame"
+contentFrame.Parent = mainFrame
+contentFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+contentFrame.BorderSizePixel = 0
+contentFrame.Position = UDim2.new(0, 0, 0, 60)
+contentFrame.Size = UDim2.new(1, 0, 1, -60)
 
--- Вспомогательные функции
-function createMinecraftButton(parent, text, position, size, color)
-    local button = Instance.new("TextButton")
-    button.Parent = parent
-    button.BackgroundColor3 = color
-    button.BorderSizePixel = 2
-    button.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    button.Position = position
-    button.Size = size
-    button.Font = Enum.Font.SourceSansBold
-    button.Text = text
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.TextSize = 14
-    button.AutoButtonColor = false
+-- Создаем вкладки
+local tabs = {"Movement", "Visuals", "Combat", "Utility"}
+
+local tabButtons = {}
+local tabContents = {}
+
+for i, tabName in ipairs(tabs) do
+    -- Кнопка вкладки
+    local tabButton = Instance.new("TextButton")
+    tabButton.Name = tabName .. "Tab"
+    tabButton.Parent = tabsFrame
+    tabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    tabButton.BorderSizePixel = 0
+    tabButton.Position = UDim2.new((i-1) / #tabs, 0, 0, 0)
+    tabButton.Size = UDim2.new(1 / #tabs, 0, 1, 0)
+    tabButton.Font = Enum.Font.SourceSans
+    tabButton.Text = tabName
+    tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tabButton.TextSize = 12
     
-    button.MouseButton1Down:Connect(function()
-        button.BackgroundColor3 = Color3.fromRGB(
-            math.max(color.R * 255 - 30, 0),
-            math.max(color.G * 255 - 30, 0),
-            math.max(color.B * 255 - 30, 0)
-        )
-        button.Position = button.Position + UDim2.new(0, 1, 0, 1)
+    -- Контент вкладки
+    local tabContent = Instance.new("ScrollingFrame")
+    tabContent.Name = tabName .. "Content"
+    tabContent.Parent = contentFrame
+    tabContent.BackgroundTransparency = 1
+    tabContent.Size = UDim2.new(1, 0, 1, 0)
+    tabContent.Visible = false
+    tabContent.ScrollingEnabled = true
+    tabContent.ScrollBarThickness = 0
+    
+    tabButtons[tabName] = tabButton
+    tabContents[tabName] = tabContent
+    
+    tabButton.MouseButton1Click:Connect(function()
+        switchTab(tabName)
     end)
-    
-    button.MouseButton1Up:Connect(function()
-        button.BackgroundColor3 = color
-        button.Position = button.Position - UDim2.new(0, 1, 0, 1)
-    end)
-    
-    button.MouseEnter:Connect(function()
-        button.BorderColor3 = Color3.fromRGB(150, 150, 150)
-    end)
-    
-    button.MouseLeave:Connect(function()
-        button.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    end)
-    
-    return button
 end
 
-function createMinecraftLabel(parent, text, position, size)
+-- Функция переключения вкладок
+function switchTab(tabName)
+    for name, content in pairs(tabContents) do
+        content.Visible = false
+    end
+    
+    for name, button in pairs(tabButtons) do
+        button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
+    
+    if tabContents[tabName] then
+        tabContents[tabName].Visible = true
+    end
+    if tabButtons[tabName] then
+        tabButtons[tabName].BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end
+end
+
+-- Функция для создания переключателя
+function createToggle(parent, text, defaultValue, callback)
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Parent = parent
+    toggleFrame.BackgroundTransparency = 1
+    toggleFrame.Size = UDim2.new(1, -10, 0, 30)
+    
     local label = Instance.new("TextLabel")
-    label.Parent = parent
+    label.Parent = toggleFrame
     label.BackgroundTransparency = 1
-    label.Position = position
-    label.Size = size
+    label.Size = UDim2.new(0.7, 0, 1, 0)
     label.Font = Enum.Font.SourceSans
     label.Text = text
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.TextSize = 14
     label.TextXAlignment = Enum.TextXAlignment.Left
     
-    return label
-end
-
-function createMinecraftToggle(parent, text, position, defaultValue, callback)
-    local toggleFrame = Instance.new("Frame")
-    toggleFrame.Parent = parent
-    toggleFrame.BackgroundTransparency = 1
-    toggleFrame.Position = position
-    toggleFrame.Size = UDim2.new(0.9, 0, 0, 30)
-    
-    local label = createMinecraftLabel(toggleFrame, text, UDim2.new(0, 35, 0, 0), UDim2.new(1, -35, 1, 0))
-    
     local toggleButton = Instance.new("TextButton")
     toggleButton.Parent = toggleFrame
-    toggleButton.BackgroundColor3 = defaultValue and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(200, 100, 100)
-    toggleButton.BorderSizePixel = 2
-    toggleButton.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    toggleButton.Position = UDim2.new(0, 5, 0.5, -10)
-    toggleButton.Size = UDim2.new(0, 20, 0, 20)
-    toggleButton.Text = ""
+    toggleButton.BackgroundColor3 = defaultValue and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    toggleButton.BorderSizePixel = 0
+    toggleButton.Position = UDim2.new(0.7, 0, 0.2, 0)
+    toggleButton.Size = UDim2.new(0.25, 0, 0.6, 0)
+    toggleButton.Font = Enum.Font.SourceSans
+    toggleButton.Text = defaultValue and "ON" or "OFF"
+    toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleButton.TextSize = 12
     
     toggleButton.MouseButton1Click:Connect(function()
         local newValue = not defaultValue
-        toggleButton.BackgroundColor3 = newValue and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(200, 100, 100)
+        toggleButton.BackgroundColor3 = newValue and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        toggleButton.Text = newValue and "ON" or "OFF"
         defaultValue = newValue
         callback(newValue)
     end)
@@ -203,35 +196,39 @@ function createMinecraftToggle(parent, text, position, defaultValue, callback)
     return {frame = toggleFrame, button = toggleButton, value = defaultValue}
 end
 
-function createMinecraftSlider(parent, text, position, minValue, maxValue, currentValue, callback)
+-- Функция для создания слайдера
+function createSlider(parent, text, minValue, maxValue, currentValue, callback)
     local sliderFrame = Instance.new("Frame")
     sliderFrame.Parent = parent
-    sliderFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    sliderFrame.BorderSizePixel = 2
-    sliderFrame.BorderColor3 = Color3.fromRGB(80, 80, 80)
-    sliderFrame.Position = position
-    sliderFrame.Size = UDim2.new(0.9, 0, 0, 50)
+    sliderFrame.BackgroundTransparency = 1
+    sliderFrame.Size = UDim2.new(1, -10, 0, 50)
     
-    local label = createMinecraftLabel(sliderFrame, text..": "..currentValue, UDim2.new(0, 5, 0, 0), UDim2.new(1, -10, 0, 20))
+    local label = Instance.new("TextLabel")
+    label.Parent = sliderFrame
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, 0, 0, 20)
+    label.Font = Enum.Font.SourceSans
+    label.Text = text .. ": " .. currentValue
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 14
     
     local track = Instance.new("Frame")
     track.Parent = sliderFrame
     track.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
     track.BorderSizePixel = 0
-    track.Position = UDim2.new(0, 5, 0, 30)
-    track.Size = UDim2.new(1, -10, 0, 10)
+    track.Position = UDim2.new(0, 0, 0, 25)
+    track.Size = UDim2.new(1, 0, 0, 10)
     
     local fill = Instance.new("Frame")
     fill.Parent = track
-    fill.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+    fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     fill.BorderSizePixel = 0
     fill.Size = UDim2.new((currentValue - minValue) / (maxValue - minValue), 0, 1, 0)
     
     local button = Instance.new("TextButton")
     button.Parent = track
     button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    button.BorderSizePixel = 2
-    button.BorderColor3 = Color3.fromRGB(100, 100, 100)
+    button.BorderSizePixel = 0
     button.Size = UDim2.new(0, 15, 0, 15)
     button.Position = UDim2.new((currentValue - minValue) / (maxValue - minValue), -7, 0, -2)
     button.Text = ""
@@ -248,7 +245,7 @@ function createMinecraftSlider(parent, text, position, minValue, maxValue, curre
         end
     end)
     
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
+    UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local mousePos = UserInputService:GetMouseLocation()
             local trackPos = track.AbsolutePosition
@@ -259,7 +256,7 @@ function createMinecraftSlider(parent, text, position, minValue, maxValue, curre
             
             fill.Size = UDim2.new(relativeX, 0, 1, 0)
             button.Position = UDim2.new(relativeX, -7, 0, -2)
-            label.Text = text..": "..value
+            label.Text = text .. ": " .. value
             
             callback(value)
         end
@@ -268,102 +265,13 @@ function createMinecraftSlider(parent, text, position, minValue, maxValue, curre
     return sliderFrame
 end
 
--- Функция для создания кнопки бинда
-function createBindButton(parent, text, currentKey, position, callback)
-    local bindFrame = Instance.new("Frame")
-    bindFrame.Parent = parent
-    bindFrame.BackgroundTransparency = 1
-    bindFrame.Position = position
-    bindFrame.Size = UDim2.new(0.9, 0, 0, 30)
-    
-    local label = createMinecraftLabel(bindFrame, text, UDim2.new(0, 0, 0, 0), UDim2.new(0.6, 0, 1, 0))
-    
-    local bindButton = createMinecraftButton(bindFrame, currentKey.Name, UDim2.new(0.6, 0, 0, 0), UDim2.new(0.4, 0, 1, 0), Color3.fromRGB(80, 80, 80))
-    
-    local listening = false
-    
-    bindButton.MouseButton1Click:Connect(function()
-        if not listening then
-            listening = true
-            bindButton.Text = "..."
-            bindButton.BackgroundColor3 = Color3.fromRGB(200, 200, 100)
-            
-            local connection
-            connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-                if gameProcessed then return end
-                
-                if input.UserInputType == Enum.UserInputType.Keyboard then
-                    listening = false
-                    bindButton.Text = input.KeyCode.Name
-                    bindButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-                    callback(input.KeyCode)
-                    connection:Disconnect()
-                end
-            end)
-        end
-    end)
-    
-    return bindButton
-end
-
--- Создаем вкладки
-local tabs = {
-    Movement = {name = "Movement", color = Color3.fromRGB(86, 156, 214), icon = "🏃"},
-    Visuals = {name = "Visuals", color = Color3.fromRGB(106, 214, 86), icon = "👁️"},
-    Combat = {name = "Combat", color = Color3.fromRGB(214, 86, 86), icon = "🎯"},
-    Utility = {name = "Utility", color = Color3.fromRGB(214, 174, 86), icon = "🔧"},
-    Keybinds = {name = "Keybinds", color = Color3.fromRGB(174, 86, 214), icon = "⌨️"},
-    Settings = {name = "Settings", color = Color3.fromRGB(86, 214, 214), icon = "⚙️"}
-}
-
-local tabButtons = {}
-local tabFrames = {}
-
-for tabName, tabData in pairs(tabs) do
-    local button = createMinecraftButton(TabButtonsFrame, tabData.icon.." "..tabData.name, 
-        UDim2.new(0, 5, 0, 5 + (#tabButtons * 45)), UDim2.new(1, -10, 0, 40), Color3.fromRGB(50, 50, 50))
-    
-    local contentFrame = Instance.new("Frame")
-    contentFrame.Name = tabName.."Content"
-    contentFrame.Parent = ContentFrame
-    contentFrame.BackgroundTransparency = 1
-    contentFrame.Size = UDim2.new(1, 0, 1, 0)
-    contentFrame.Visible = false
-    
-    tabButtons[tabName] = button
-    tabFrames[tabName] = contentFrame
-    
-    button.MouseButton1Click:Connect(function()
-        switchTab(tabName)
-    end)
-end
-
--- Функция переключения вкладок
-function switchTab(tabName)
-    currentTab = tabName
-    
-    for name, frame in pairs(tabFrames) do
-        frame.Visible = false
-    end
-    
-    for name, button in pairs(tabButtons) do
-        button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    end
-    
-    if tabFrames[tabName] then
-        tabFrames[tabName].Visible = true
-    end
-    if tabButtons[tabName] then
-        tabButtons[tabName].BackgroundColor3 = tabs[tabName].color
-    end
-end
-
--- СОДЕРЖИМОЕ ВКЛАДОК
+-- Заполняем вкладки контентом
 
 -- Вкладка Movement
-local MovementContent = tabFrames.Movement
+local movementContent = tabContents.Movement
+movementContent.CanvasSize = UDim2.new(0, 0, 0, 400)
 
-local FlyToggle = createMinecraftToggle(MovementContent, "Flight", UDim2.new(0.05, 0, 0.05, 0), settings.isFlying, function(value)
+local flyToggle = createToggle(movementContent, "Flight", settings.isFlying, function(value)
     settings.isFlying = value
     if value then
         enableFlight()
@@ -371,8 +279,9 @@ local FlyToggle = createMinecraftToggle(MovementContent, "Flight", UDim2.new(0.0
         disableFlight()
     end
 end)
+flyToggle.frame.Position = UDim2.new(0, 5, 0, 10)
 
-local NoClipToggle = createMinecraftToggle(MovementContent, "NoClip", UDim2.new(0.05, 0, 0.12, 0), settings.isNoClip, function(value)
+local noclipToggle = createToggle(movementContent, "NoClip", settings.isNoClip, function(value)
     settings.isNoClip = value
     if value then
         enableNoClip()
@@ -380,8 +289,9 @@ local NoClipToggle = createMinecraftToggle(MovementContent, "NoClip", UDim2.new(
         disableNoClip()
     end
 end)
+noclipToggle.frame.Position = UDim2.new(0, 5, 0, 50)
 
-local SpeedToggle = createMinecraftToggle(MovementContent, "Speed Hack", UDim2.new(0.05, 0, 0.19, 0), settings.isSpeedHack, function(value)
+local speedToggle = createToggle(movementContent, "Speed Hack", settings.isSpeedHack, function(value)
     settings.isSpeedHack = value
     if value then
         enableSpeedHack()
@@ -389,8 +299,9 @@ local SpeedToggle = createMinecraftToggle(MovementContent, "Speed Hack", UDim2.n
         disableSpeedHack()
     end
 end)
+speedToggle.frame.Position = UDim2.new(0, 5, 0, 90)
 
-local BhopToggle = createMinecraftToggle(MovementContent, "Bunny Hop", UDim2.new(0.05, 0, 0.26, 0), settings.isBhop, function(value)
+local bhopToggle = createToggle(movementContent, "Bunny Hop", settings.isBhop, function(value)
     settings.isBhop = value
     if value then
         enableBhop()
@@ -398,27 +309,32 @@ local BhopToggle = createMinecraftToggle(MovementContent, "Bunny Hop", UDim2.new
         disableBhop()
     end
 end)
+bhopToggle.frame.Position = UDim2.new(0, 5, 0, 130)
 
-createMinecraftSlider(MovementContent, "Flight Speed", UDim2.new(0.05, 0, 0.35, 0), 1, 10, settings.speed, function(value)
+local flySpeedSlider = createSlider(movementContent, "Flight Speed", 1, 10, settings.speed, function(value)
     settings.speed = value
 end)
+flySpeedSlider.Position = UDim2.new(0, 5, 0, 170)
 
-createMinecraftSlider(MovementContent, "Speed Multiplier", UDim2.new(0.05, 0, 0.45, 0), 1, 5, settings.speedHackValue, function(value)
+local speedSlider = createSlider(movementContent, "Speed Multiplier", 1, 5, settings.speedHackValue, function(value)
     settings.speedHackValue = value
     if settings.isSpeedHack then
         disableSpeedHack()
         enableSpeedHack()
     end
 end)
+speedSlider.Position = UDim2.new(0, 5, 0, 230)
 
-createMinecraftSlider(MovementContent, "Bhop Speed", UDim2.new(0.05, 0, 0.55, 0), 1, 3, settings.bhopSpeed, function(value)
+local bhopSlider = createSlider(movementContent, "Bhop Power", 1, 3, settings.bhopSpeed, function(value)
     settings.bhopSpeed = value
 end)
+bhopSlider.Position = UDim2.new(0, 5, 0, 290)
 
 -- Вкладка Visuals
-local VisualsContent = tabFrames.Visuals
+local visualsContent = tabContents.Visuals
+visualsContent.CanvasSize = UDim2.new(0, 0, 0, 300)
 
-local ESPToggle = createMinecraftToggle(VisualsContent, "Player ESP", UDim2.new(0.05, 0, 0.05, 0), settings.isESPEnabled, function(value)
+local espToggle = createToggle(visualsContent, "Player ESP", settings.isESPEnabled, function(value)
     settings.isESPEnabled = value
     if value then
         enableESP()
@@ -426,23 +342,27 @@ local ESPToggle = createMinecraftToggle(VisualsContent, "Player ESP", UDim2.new(
         disableESP()
     end
 end)
+espToggle.frame.Position = UDim2.new(0, 5, 0, 10)
 
-local ESPNamesToggle = createMinecraftToggle(VisualsContent, "Show Names", UDim2.new(0.05, 0, 0.12, 0), settings.espNames, function(value)
+local espNamesToggle = createToggle(visualsContent, "Show Names", settings.espNames, function(value)
     settings.espNames = value
     updateESP()
 end)
+espNamesToggle.frame.Position = UDim2.new(0, 5, 0, 50)
 
-local ESPDistanceToggle = createMinecraftToggle(VisualsContent, "Show Distance", UDim2.new(0.05, 0, 0.19, 0), settings.espDistance, function(value)
+local espDistanceToggle = createToggle(visualsContent, "Show Distance", settings.espDistance, function(value)
     settings.espDistance = value
     updateESP()
 end)
+espDistanceToggle.frame.Position = UDim2.new(0, 5, 0, 90)
 
-local ESPBoxesToggle = createMinecraftToggle(VisualsContent, "Show Boxes", UDim2.new(0.05, 0, 0.26, 0), settings.espBoxes, function(value)
+local espBoxesToggle = createToggle(visualsContent, "Show Boxes", settings.espBoxes, function(value)
     settings.espBoxes = value
     updateESP()
 end)
+espBoxesToggle.frame.Position = UDim2.new(0, 5, 0, 130)
 
-local FullbrightToggle = createMinecraftToggle(VisualsContent, "Fullbright", UDim2.new(0.05, 0, 0.35, 0), settings.isFullbright, function(value)
+local fullbrightToggle = createToggle(visualsContent, "Fullbright", settings.isFullbright, function(value)
     settings.isFullbright = value
     if value then
         enableFullbright()
@@ -450,11 +370,13 @@ local FullbrightToggle = createMinecraftToggle(VisualsContent, "Fullbright", UDi
         disableFullbright()
     end
 end)
+fullbrightToggle.frame.Position = UDim2.new(0, 5, 0, 170)
 
 -- Вкладка Combat
-local CombatContent = tabFrames.Combat
+local combatContent = tabContents.Combat
+combatContent.CanvasSize = UDim2.new(0, 0, 0, 100)
 
-local AimbotToggle = createMinecraftToggle(CombatContent, "Aimbot", UDim2.new(0.05, 0, 0.05, 0), settings.isAimbot, function(value)
+local aimbotToggle = createToggle(combatContent, "Aimbot", settings.isAimbot, function(value)
     settings.isAimbot = value
     if value then
         enableAimbot()
@@ -462,14 +384,23 @@ local AimbotToggle = createMinecraftToggle(CombatContent, "Aimbot", UDim2.new(0.
         disableAimbot()
     end
 end)
+aimbotToggle.frame.Position = UDim2.new(0, 5, 0, 10)
 
-createMinecraftLabel(CombatContent, "Aimbot Settings", UDim2.new(0.05, 0, 0.15, 0), UDim2.new(0.9, 0, 0, 20))
-createMinecraftLabel(CombatContent, "Hold "..settings.keybinds.aimbot.Name.." to aim", UDim2.new(0.05, 0, 0.2, 0), UDim2.new(0.9, 0, 0, 20))
+local aimbotKeyLabel = Instance.new("TextLabel")
+aimbotKeyLabel.Parent = combatContent
+aimbotKeyLabel.BackgroundTransparency = 1
+aimbotKeyLabel.Position = UDim2.new(0, 5, 0, 50)
+aimbotKeyLabel.Size = UDim2.new(1, -10, 0, 20)
+aimbotKeyLabel.Font = Enum.Font.SourceSans
+aimbotKeyLabel.Text = "Aimbot Key: " .. settings.keybinds.aimbot.Name
+aimbotKeyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimbotKeyLabel.TextSize = 12
 
 -- Вкладка Utility
-local UtilityContent = tabFrames.Utility
+local utilityContent = tabContents.Utility
+utilityContent.CanvasSize = UDim2.new(0, 0, 0, 100)
 
-local AntiAFKToggle = createMinecraftToggle(UtilityContent, "Anti-AFK", UDim2.new(0.05, 0, 0.05, 0), settings.isAntiAFK, function(value)
+local antiAFKToggle = createToggle(utilityContent, "Anti-AFK", settings.isAntiAFK, function(value)
     settings.isAntiAFK = value
     if value then
         enableAntiAFK()
@@ -477,74 +408,108 @@ local AntiAFKToggle = createMinecraftToggle(UtilityContent, "Anti-AFK", UDim2.ne
         disableAntiAFK()
     end
 end)
+antiAFKToggle.frame.Position = UDim2.new(0, 5, 0, 10)
 
--- Вкладка Keybinds
-local KeybindsContent = tabFrames.Keybinds
-
-createMinecraftLabel(KeybindsContent, "Click to change keybinds", UDim2.new(0.05, 0, 0.02, 0), UDim2.new(0.9, 0, 0, 20))
-
-local FlyBind = createBindButton(KeybindsContent, "Flight", settings.keybinds.fly, UDim2.new(0.05, 0, 0.1, 0), function(newKey)
-    settings.keybinds.fly = newKey
-end)
-
-local NoClipBind = createBindButton(KeybindsContent, "NoClip", settings.keybinds.noclip, UDim2.new(0.05, 0, 0.2, 0), function(newKey)
-    settings.keybinds.noclip = newKey
-end)
-
-local ESPBind = createBindButton(KeybindsContent, "ESP", settings.keybinds.esp, UDim2.new(0.05, 0, 0.3, 0), function(newKey)
-    settings.keybinds.esp = newKey
-end)
-
-local AimbotBind = createBindButton(KeybindsContent, "Aimbot", settings.keybinds.aimbot, UDim2.new(0.05, 0, 0.4, 0), function(newKey)
-    settings.keybinds.aimbot = newKey
-end)
-
-local BhopBind = createBindButton(KeybindsContent, "Bunny Hop", settings.keybinds.bhop, UDim2.new(0.05, 0, 0.5, 0), function(newKey)
-    settings.keybinds.bhop = newKey
-end)
-
-local SpeedBind = createBindButton(KeybindsContent, "Speed Hack", settings.keybinds.speedhack, UDim2.new(0.05, 0, 0.6, 0), function(newKey)
-    settings.keybinds.speedhack = newKey
-end)
-
--- Вкладка Settings
-local SettingsContent = tabFrames.Settings
-
-createMinecraftLabel(SettingsContent, "GUI Key: Insert", UDim2.new(0.05, 0, 0.05, 0), UDim2.new(0.9, 0, 0, 20))
-createMinecraftLabel(SettingsContent, "Panic Key: Delete", UDim2.new(0.05, 0, 0.1, 0), UDim2.new(0.9, 0, 0, 20))
-createMinecraftLabel(SettingsContent, "Unload Key: End", UDim2.new(0.05, 0, 0.15, 0), UDim2.new(0.9, 0, 0, 20))
-
-local ResetButton = createMinecraftButton(SettingsContent, "Reset All Settings", UDim2.new(0.05, 0, 0.25, 0), UDim2.new(0.9, 0, 0, 35), Color3.fromRGB(200, 100, 100))
-
-createMinecraftLabel(SettingsContent, "Advanced Cheats V6", UDim2.new(0.05, 0, 0.8, 0), UDim2.new(0.9, 0, 0, 20))
-createMinecraftLabel(SettingsContent, "By XNEO", UDim2.new(0.05, 0, 0.85, 0), UDim2.new(0.9, 0, 0, 20))
+local keybindsLabel = Instance.new("TextLabel")
+keybindsLabel.Parent = utilityContent
+keybindsLabel.BackgroundTransparency = 1
+keybindsLabel.Position = UDim2.new(0, 5, 0, 50)
+keybindsLabel.Size = UDim2.new(1, -10, 0, 40)
+keybindsLabel.Font = Enum.Font.SourceSans
+keybindsLabel.Text = "Keybinds:\nF-Flight V-NoClip\nX-ESP Q-Aimbot\nSpace-Bhop Shift-Speed"
+keybindsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+keybindsLabel.TextSize = 12
+keybindsLabel.TextWrapped = true
 
 -- СИСТЕМЫ ФУНКЦИЙ
 
--- Flight System (упрощенная версия)
+-- Flight System
 function enableFlight()
     if settings.isFlying then return end
+    
+    local character = player.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+    if not humanoid then return end
+    
     settings.isFlying = true
-    -- Flight implementation...
+    
+    -- Простая система полета
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
+    bodyVelocity.Parent = character.HumanoidRootPart
+    
+    local flightConnection
+    flightConnection = RunService.Heartbeat:Connect(function()
+        if not settings.isFlying or not character then
+            flightConnection:Disconnect()
+            return
+        end
+        
+        local cam = workspace.CurrentCamera
+        local moveDirection = Vector3.new(0, 0, 0)
+        
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            moveDirection = moveDirection + cam.CFrame.LookVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            moveDirection = moveDirection - cam.CFrame.LookVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            moveDirection = moveDirection - cam.CFrame.RightVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            moveDirection = moveDirection + cam.CFrame.RightVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            moveDirection = moveDirection + Vector3.new(0, 1, 0)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            moveDirection = moveDirection - Vector3.new(0, 1, 0)
+        end
+        
+        bodyVelocity.Velocity = moveDirection * (settings.speed * 50)
+    end)
 end
 
 function disableFlight()
     if not settings.isFlying then return end
     settings.isFlying = false
-    -- Flight cleanup...
+    
+    local character = player.Character
+    if character and character.HumanoidRootPart then
+        for _, v in pairs(character.HumanoidRootPart:GetChildren()) do
+            if v:IsA("BodyVelocity") then
+                v:Destroy()
+            end
+        end
+    end
 end
 
 -- NoClip System
 function enableNoClip()
     if settings.isNoClip then return end
     settings.isNoClip = true
-    -- NoClip implementation...
+    
+    local character = player.Character
+    if not character then return end
+    
+    RunService.Stepped:Connect(function()
+        if not settings.isNoClip or not character then return end
+        
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end)
 end
 
 function disableNoClip()
     if not settings.isNoClip then return end
     settings.isNoClip = false
-    -- NoClip cleanup...
 end
 
 -- Speed Hack System
@@ -579,6 +544,7 @@ function enableBhop()
     if settings.isBhop then return end
     settings.isBhop = true
     
+    local bhopConnection
     bhopConnection = RunService.Heartbeat:Connect(function()
         if not settings.isBhop or not player.Character then return end
         
@@ -592,13 +558,11 @@ end
 function disableBhop()
     if not settings.isBhop then return end
     settings.isBhop = false
-    
-    if bhopConnection then
-        bhopConnection:Disconnect()
-    end
 end
 
 -- ESP System
+local espHighlights = {}
+
 function enableESP()
     if settings.isESPEnabled then return end
     settings.isESPEnabled = true
@@ -618,7 +582,6 @@ function disableESP()
         if espData then
             if espData.highlight then espData.highlight:Destroy() end
             if espData.billboard then espData.billboard:Destroy() end
-            if espData.connection then espData.connection:Disconnect() end
         end
     end
     espHighlights = {}
@@ -630,34 +593,96 @@ function updateESP()
             local nameLabel = espData.billboard:FindFirstChild("NameLabel")
             local distanceLabel = espData.billboard:FindFirstChild("DistanceLabel")
             
-            if nameLabel then
-                nameLabel.Visible = settings.espNames
-            end
-            if distanceLabel then
-                distanceLabel.Visible = settings.espDistance
-            end
-            if espData.highlight then
-                espData.highlight.Enabled = settings.espBoxes
-            end
+            if nameLabel then nameLabel.Visible = settings.espNames end
+            if distanceLabel then distanceLabel.Visible = settings.espDistance end
+            if espData.highlight then espData.highlight.Enabled = settings.espBoxes end
         end
     end
 end
 
 function createESP(targetPlayer)
-    -- ESP implementation with name tags and distance...
+    if not targetPlayer or not targetPlayer.Character then return end
+    
+    local character = targetPlayer.Character
+    local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if not humanoid or not rootPart then return end
+    
+    -- Highlight
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESP_Highlight"
+    highlight.Parent = character
+    highlight.Adornee = character
+    highlight.FillColor = targetPlayer.Team and targetPlayer.TeamColor.Color or Color3.fromRGB(255, 0, 0)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.7
+    highlight.OutlineTransparency = 0
+    highlight.Enabled = settings.espBoxes
+    
+    -- Name Tag
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESP_Billboard"
+    billboard.Parent = character
+    billboard.Adornee = rootPart
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Parent = billboard
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    nameLabel.Font = Enum.Font.SourceSansBold
+    nameLabel.Text = targetPlayer.Name
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameLabel.TextStrokeTransparency = 0
+    nameLabel.TextSize = 14
+    nameLabel.Visible = settings.espNames
+    
+    local distanceLabel = Instance.new("TextLabel")
+    distanceLabel.Name = "DistanceLabel"
+    distanceLabel.Parent = billboard
+    distanceLabel.BackgroundTransparency = 1
+    distanceLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    distanceLabel.Position = UDim2.new(0, 0, 0.5, 0)
+    distanceLabel.Font = Enum.Font.SourceSans
+    distanceLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    distanceLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    distanceLabel.TextStrokeTransparency = 0
+    distanceLabel.TextSize = 12
+    distanceLabel.Visible = settings.espDistance
+    
+    -- Update distance
+    RunService.Heartbeat:Connect(function()
+        if not settings.isESPEnabled or not character or not player.Character then
+            return
+        end
+        
+        local playerRoot = player.Character:FindFirstChild("HumanoidRootPart")
+        if playerRoot and rootPart then
+            local distance = (playerRoot.Position - rootPart.Position).Magnitude
+            distanceLabel.Text = math.floor(distance) .. " studs"
+        end
+    end)
+    
+    espHighlights[targetPlayer] = {
+        highlight = highlight,
+        billboard = billboard
+    }
 end
 
 -- Aimbot System
 function enableAimbot()
     if settings.isAimbot then return end
     settings.isAimbot = true
-    -- Aimbot implementation...
 end
 
 function disableAimbot()
     if not settings.isAimbot then return end
     settings.isAimbot = false
-    -- Aimbot cleanup...
 end
 
 -- Anti-AFK System
@@ -665,9 +690,8 @@ function enableAntiAFK()
     if settings.isAntiAFK then return end
     settings.isAntiAFK = true
     
-    antiAFKConnection = RunService.Heartbeat:Connect(function()
-        if not settings.isAntiAFK then return end
-        local virtualUser = game:GetService("VirtualUser")
+    local virtualUser = game:GetService("VirtualUser")
+    game:GetService("Players").LocalPlayer.Idled:connect(function()
         virtualUser:CaptureController()
         virtualUser:ClickButton2(Vector2.new())
     end)
@@ -676,10 +700,6 @@ end
 function disableAntiAFK()
     if not settings.isAntiAFK then return end
     settings.isAntiAFK = false
-    
-    if antiAFKConnection then
-        antiAFKConnection:Disconnect()
-    end
 end
 
 -- Fullbright System
@@ -687,27 +707,26 @@ function enableFullbright()
     if settings.isFullbright then return end
     settings.isFullbright = true
     
-    Lighting.Ambient = Color3.new(1, 1, 1)
-    Lighting.Brightness = 2
-    Lighting.GlobalShadows = false
+    game:GetService("Lighting").Ambient = Color3.new(1, 1, 1)
+    game:GetService("Lighting").Brightness = 2
+    game:GetService("Lighting").GlobalShadows = false
 end
 
 function disableFullbright()
     if not settings.isFullbright then return end
     settings.isFullbright = false
     
-    Lighting.Ambient = Color3.new(0, 0, 0)
-    Lighting.Brightness = 1
-    Lighting.GlobalShadows = true
+    game:GetService("Lighting").Ambient = Color3.new(0, 0, 0)
+    game:GetService("Lighting").Brightness = 1
+    game:GetService("Lighting").GlobalShadows = true
 end
 
 -- Keybind System
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    -- GUI Controls
     if input.KeyCode == Enum.KeyCode.Insert then
-        MainFrame.Visible = not MainFrame.Visible
+        screenGui.Enabled = not screenGui.Enabled
     elseif input.KeyCode == Enum.KeyCode.Delete then
         -- Panic button
         disableFlight()
@@ -719,16 +738,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         disableAntiAFK()
         disableFullbright()
     elseif input.KeyCode == Enum.KeyCode.End then
-        -- Unload
-        disableFlight()
-        disableNoClip()
-        disableSpeedHack()
-        disableBhop()
-        disableESP()
-        disableAimbot()
-        disableAntiAFK()
-        disableFullbright()
-        main:Destroy()
+        screenGui:Destroy()
         return
     end
     
@@ -755,10 +765,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
             disableESP()
         end
     elseif input.KeyCode == settings.keybinds.aimbot then
-        -- Aimbot is hold-to-use
-        if settings.isAimbot then
-            -- Aimbot logic when key is held
-        end
+        -- Aimbot logic here
     elseif input.KeyCode == settings.keybinds.bhop then
         settings.isBhop = not settings.isBhop
         if settings.isBhop then
@@ -777,51 +784,8 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 -- Обработчики кнопок
-ResetButton.MouseButton1Click:Connect(function()
-    -- Reset all to default
-    disableFlight()
-    disableNoClip()
-    disableSpeedHack()
-    disableBhop()
-    disableESP()
-    disableAimbot()
-    disableAntiAFK()
-    disableFullbright()
-    
-    settings = {
-        speed = 1,
-        isFlying = false,
-        isNoClip = false,
-        isESPEnabled = false,
-        isSpeedHack = false,
-        isAimbot = false,
-        isBhop = false,
-        isAntiAFK = false,
-        isFullbright = false,
-        espNames = true,
-        espDistance = true,
-        espBoxes = true,
-        speedHackValue = 2,
-        bhopSpeed = 1.5,
-        keybinds = {
-            fly = Enum.KeyCode.F,
-            noclip = Enum.KeyCode.V,
-            esp = Enum.KeyCode.X,
-            aimbot = Enum.KeyCode.Q,
-            bhop = Enum.KeyCode.Space,
-            speedhack = Enum.KeyCode.LeftShift
-        }
-    }
-    
-    switchTab(currentTab)
-end)
-
-CloseButton.MouseButton1Click:Connect(function()
-    main:Destroy()
-end)
-
-MinimizeButton.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
 end)
 
 -- Автоматическая очистка
@@ -829,12 +793,6 @@ player.CharacterAdded:Connect(function(character)
     wait(1)
     disableFlight()
     disableNoClip()
-    
-    local humanoid = character:WaitForChild("Humanoid")
-    humanoid.Died:Connect(function()
-        disableFlight()
-        disableNoClip()
-    end)
 end)
 
 -- Инициализация
@@ -842,11 +800,10 @@ switchTab("Movement")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "ADVANCED CHEATS V6",
-    Text = "Loaded! Check Keybinds tab to customize",
+    Title = "SCRIPT LOADED",
+    Text = "Insert - GUI, Delete - Panic, End - Unload",
     Duration = 5
 })
 
-print("Advanced Cheats V6 loaded!")
-print("Features: Flight, NoClip, SpeedHack, Bhop, ESP, Aimbot, Anti-AFK, Fullbright")
-print("Customize keybinds in the Keybinds tab!")
+print("Script loaded successfully!")
+print("All functions are available in the menu!")

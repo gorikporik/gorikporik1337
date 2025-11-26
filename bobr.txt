@@ -6,7 +6,7 @@ local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 
--- Создаем простое меню
+-- Создаем меню
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CheatMenu"
 screenGui.Parent = CoreGui
@@ -83,7 +83,7 @@ local flightBtn = createButton(mainFrame, "Flight: OFF", UDim2.new(0.05, 0, 0.15
             flightBodyVelocity.Parent = character.HumanoidRootPart
             
             -- Двигаем в отдельном потоке
-            coroutine.wrap(function()
+            spawn(function()
                 while flying and character do
                     local cam = workspace.CurrentCamera
                     local moveDir = Vector3.new(0, 0, 0)
@@ -98,7 +98,7 @@ local flightBtn = createButton(mainFrame, "Flight: OFF", UDim2.new(0.05, 0, 0.15
                     flightBodyVelocity.Velocity = moveDir * 50
                     RunService.Heartbeat:Wait()
                 end
-            end)()
+            end)
         end
     else
         if flightBodyVelocity then
@@ -113,7 +113,7 @@ local noclipBtn = createButton(mainFrame, "NoClip: OFF", UDim2.new(0.05, 0, 0.3,
     noclipBtn.Text = noclip and "NoClip: ON" or "NoClip: OFF"
     
     if noclip then
-        coroutine.wrap(function()
+        spawn(function()
             while noclip do
                 local character = player.Character
                 if character then
@@ -125,7 +125,7 @@ local noclipBtn = createButton(mainFrame, "NoClip: OFF", UDim2.new(0.05, 0, 0.3,
                 end
                 RunService.Heartbeat:Wait()
             end
-        end)()
+        end)
     end
 end)
 
@@ -181,7 +181,7 @@ local aimbotBtn = createButton(mainFrame, "Aimbot: OFF", UDim2.new(0.05, 0, 0.75
     aimbotBtn.Text = aimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
     
     if aimbotEnabled then
-        coroutine.wrap(function()
+        spawn(function()
             while aimbotEnabled do
                 if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
                     local closestEnemy = getClosestEnemy()
@@ -195,7 +195,7 @@ local aimbotBtn = createButton(mainFrame, "Aimbot: OFF", UDim2.new(0.05, 0, 0.75
                 end
                 RunService.Heartbeat:Wait()
             end
-        end)()
+        end)
     end
 end)
 

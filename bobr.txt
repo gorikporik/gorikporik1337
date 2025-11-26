@@ -1,4 +1,4 @@
--- Simple Cheat Menu
+-- Ultra Simple Working Cheat Menu
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -6,11 +6,11 @@ local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 
-print("=== CHEAT MENU LOADED ===")
+print("=== SIMPLE CHEAT MENU ===")
 
 -- Создаем меню
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CheatMenu"
+screenGui.Name = "SimpleCheatMenu"
 screenGui.Parent = CoreGui
 
 local mainFrame = Instance.new("Frame")
@@ -19,7 +19,7 @@ mainFrame.Parent = screenGui
 mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
-mainFrame.Size = UDim2.new(0, 200, 0, 250)
+mainFrame.Size = UDim2.new(0, 200, 0, 200)
 mainFrame.Active = true
 mainFrame.Draggable = true
 
@@ -29,25 +29,14 @@ title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 title.BorderSizePixel = 0
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Font = Enum.Font.SourceSansBold
-title.Text = "CHEAT MENU"
+title.Text = "SIMPLE CHEATS"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 16
+title.TextSize = 14
 
-local closeButton = Instance.new("TextButton")
-closeButton.Parent = mainFrame
-closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-closeButton.BorderSizePixel = 0
-closeButton.Position = UDim2.new(1, -25, 0, 5)
-closeButton.Size = UDim2.new(0, 20, 0, 20)
-closeButton.Font = Enum.Font.SourceSansBold
-closeButton.Text = "X"
-closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeButton.TextSize = 12
-
--- Функция для создания кнопок
-local function createButton(parent, text, position, callback)
+-- Функции
+local function createButton(text, position, callback)
     local button = Instance.new("TextButton")
-    button.Parent = parent
+    button.Parent = mainFrame
     button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     button.BorderSizePixel = 0
     button.Position = position
@@ -55,82 +44,71 @@ local function createButton(parent, text, position, callback)
     button.Font = Enum.Font.SourceSans
     button.Text = text
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.TextSize = 14
+    button.TextSize = 12
     
     button.MouseButton1Click:Connect(callback)
     return button
 end
 
--- Переменные для функций
-local flying = false
-local flightBodyVelocity
-local noclip = false
-local espEnabled = false
-local highlights = {}
-local aimbotEnabled = false
-local speedHack = false
-local originalSpeed = 16
-
--- FLIGHT SYSTEM
-local flightBtn = createButton(mainFrame, "Flight: OFF", UDim2.new(0.05, 0, 0.15, 0), function()
-    flying = not flying
-    flightBtn.Text = flying and "Flight: ON" or "Flight: OFF"
-    print("Flight: " .. (flying and "ON" or "OFF"))
-    
-    if flying then
-        local character = player.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            flightBodyVelocity = Instance.new("BodyVelocity")
-            flightBodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            flightBodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
-            flightBodyVelocity.Parent = character.HumanoidRootPart
-            
-            -- Flight loop
-            coroutine.wrap(function()
-                while flying and character do
-                    local cam = workspace.CurrentCamera
-                    local moveDir = Vector3.new(0, 0, 0)
-                    
-                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
-                    
-                    flightBodyVelocity.Velocity = moveDir * 50
-                    RunService.Heartbeat:Wait()
-                end
-            end)()
+-- 1. SPEED HACK (самая простая функция)
+local speedEnabled = false
+local speedBtn = createButton("SPEED: OFF", UDim2.new(0.05, 0, 0.2, 0), function()
+    speedEnabled = not speedEnabled
+    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        if speedEnabled then
+            humanoid.WalkSpeed = 50
+            speedBtn.Text = "SPEED: ON"
+            print("Speed ON - WalkSpeed: 50")
+        else
+            humanoid.WalkSpeed = 16
+            speedBtn.Text = "SPEED: OFF"
+            print("Speed OFF - WalkSpeed: 16")
         end
     else
-        if flightBodyVelocity then
-            flightBodyVelocity:Destroy()
-        end
+        print("No humanoid found!")
     end
 end)
 
--- NOCLIP SYSTEM
-local noclipBtn = createButton(mainFrame, "NoClip: OFF", UDim2.new(0.05, 0, 0.3, 0), function()
-    noclip = not noclip
-    noclipBtn.Text = noclip and "NoClip: ON" or "NoClip: OFF"
-    print("NoClip: " .. (noclip and "ON" or "OFF"))
-    
-    if noclip then
-        coroutine.wrap(function()
-            while noclip do
-                local character = player.Character
-                if character then
-                    for _, part in pairs(character:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                        end
-                    end
-                end
-                RunService.Heartbeat:Wait()
-            end
-        end)()
+-- 2. JUMP POWER
+local jumpEnabled = false
+local jumpBtn = createButton("JUMP: OFF", UDim2.new(0.05, 0, 0.4, 0), function()
+    jumpEnabled = not jumpEnabled
+    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        if jumpEnabled then
+            humanoid.JumpPower = 100
+            jumpBtn.Text = "JUMP: ON"
+            print("Jump ON - JumpPower: 100")
+        else
+            humanoid.JumpPower = 50
+            jumpBtn.Text = "JUMP: OFF"
+            print("Jump OFF - JumpPower: 50")
+        end
     else
+        print("No humanoid found!")
+    end
+end)
+
+-- 3. NOCLIP
+local noclipEnabled = false
+local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.6, 0), function()
+    noclipEnabled = not noclipEnabled
+    noclipBtn.Text = noclipEnabled and "NOCLIP: ON" or "NOCLIP: OFF"
+    print("NoClip: " .. (noclipEnabled and "ON" or "OFF"))
+    
+    if noclipEnabled then
+        -- Включить ноклип
+        local character = player.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    else
+        -- Выключить ноклип
         local character = player.Character
         if character then
             for _, part in pairs(character:GetDescendants()) do
@@ -142,139 +120,47 @@ local noclipBtn = createButton(mainFrame, "NoClip: OFF", UDim2.new(0.05, 0, 0.3,
     end
 end)
 
--- SPEED HACK SYSTEM
-local speedBtn = createButton(mainFrame, "Speed: OFF", UDim2.new(0.05, 0, 0.45, 0), function()
-    speedHack = not speedHack
-    speedBtn.Text = speedHack and "Speed: ON" or "Speed: OFF"
-    print("Speed Hack: " .. (speedHack and "ON" or "OFF"))
+-- 4. FLY
+local flyEnabled = false
+local flyBodyVelocity
+local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.8, 0), function()
+    flyEnabled = not flyEnabled
+    flyBtn.Text = flyEnabled and "FLY: ON" or "FLY: OFF"
+    print("Fly: " .. (flyEnabled and "ON" or "OFF"))
     
-    local character = player.Character
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            if speedHack then
-                originalSpeed = humanoid.WalkSpeed
-                humanoid.WalkSpeed = 50
-                print("Speed set to 50")
-            else
-                humanoid.WalkSpeed = originalSpeed
-                print("Speed reset to " .. originalSpeed)
-            end
-        else
-            print("No humanoid found")
+    if flyEnabled then
+        -- Включить полет
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            flyBodyVelocity = Instance.new("BodyVelocity")
+            flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            flyBodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+            flyBodyVelocity.Parent = character.HumanoidRootPart
+            
+            -- Двигаем
+            spawn(function()
+                while flyEnabled and character do
+                    local cam = workspace.CurrentCamera
+                    local moveDir = Vector3.new(0, 0, 0)
+                    
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+                    
+                    flyBodyVelocity.Velocity = moveDir * 50
+                    RunService.Heartbeat:Wait()
+                end
+            end)
         end
     else
-        print("No character found")
-    end
-end)
-
--- ESP SYSTEM
-local espBtn = createButton(mainFrame, "ESP: OFF", UDim2.new(0.05, 0, 0.6, 0), function()
-    espEnabled = not espEnabled
-    espBtn.Text = espEnabled and "ESP: ON" or "ESP: OFF"
-    print("ESP: " .. (espEnabled and "ON" or "OFF"))
-    
-    if espEnabled then
-        for _, otherPlayer in pairs(Players:GetPlayers()) do
-            if otherPlayer ~= player and otherPlayer.Character then
-                local highlight = Instance.new("Highlight")
-                highlight.FillColor = Color3.new(1, 0, 0)
-                highlight.OutlineColor = Color3.new(1, 1, 1)
-                highlight.FillTransparency = 0.5
-                highlight.Parent = otherPlayer.Character
-                highlight.Adornee = otherPlayer.Character
-                highlights[otherPlayer] = highlight
-                print("ESP added for " .. otherPlayer.Name)
-            end
-        end
-    else
-        for playerName, highlight in pairs(highlights) do
-            if highlight then
-                highlight:Destroy()
-                print("ESP removed for " .. playerName)
-            end
-        end
-        highlights = {}
-    end
-end)
-
--- AIMBOT SYSTEM
-local aimbotBtn = createButton(mainFrame, "Aimbot: OFF", UDim2.new(0.05, 0, 0.75, 0), function()
-    aimbotEnabled = not aimbotEnabled
-    aimbotBtn.Text = aimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
-    print("Aimbot: " .. (aimbotEnabled and "ON" or "OFF"))
-    
-    if aimbotEnabled then
-        coroutine.wrap(function()
-            while aimbotEnabled do
-                if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-                    local closestEnemy = getClosestEnemy()
-                    if closestEnemy and closestEnemy.Character then
-                        local targetRoot = closestEnemy.Character:FindFirstChild("HumanoidRootPart")
-                        local camera = workspace.CurrentCamera
-                        if targetRoot and camera then
-                            camera.CFrame = CFrame.new(camera.CFrame.Position, targetRoot.Position)
-                        end
-                    end
-                end
-                RunService.Heartbeat:Wait()
-            end
-        end)()
-    end
-end)
-
--- Функция для поиска ближайшего врага (игнорирует тиммейтов)
-local function getClosestEnemy()
-    local closestPlayer = nil
-    local closestDistance = math.huge
-    local localRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    
-    if not localRoot then return nil end
-    
-    for _, otherPlayer in pairs(Players:GetPlayers()) do
-        if otherPlayer ~= player and otherPlayer.Character then
-            -- Проверка на тиммейтов
-            local isTeammate = false
-            
-            if player.Team and otherPlayer.Team then
-                if player.Team == otherPlayer.Team then
-                    isTeammate = true
-                end
-            end
-            
-            if not isTeammate then
-                local targetRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                local humanoid = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
-                
-                if targetRoot and humanoid and humanoid.Health > 0 then
-                    local distance = (localRoot.Position - targetRoot.Position).Magnitude
-                    if distance < closestDistance then
-                        closestDistance = distance
-                        closestPlayer = otherPlayer
-                    end
-                end
-            end
+        -- Выключить полет
+        if flyBodyVelocity then
+            flyBodyVelocity:Destroy()
         end
     end
-    
-    return closestPlayer
-end
-
--- Информация
-local infoLabel = Instance.new("TextLabel")
-infoLabel.Parent = mainFrame
-infoLabel.BackgroundTransparency = 1
-infoLabel.Position = UDim2.new(0.05, 0, 0.9, 0)
-infoLabel.Size = UDim2.new(0.9, 0, 0, 40)
-infoLabel.Font = Enum.Font.SourceSans
-infoLabel.Text = "Insert - Hide/Show"
-infoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-infoLabel.TextSize = 12
-
--- Закрытие меню
-closeButton.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
-    print("Menu closed")
 end)
 
 -- Горячие клавиши
@@ -283,16 +169,20 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     
     if input.KeyCode == Enum.KeyCode.Insert then
         mainFrame.Visible = not mainFrame.Visible
-        print("Menu visibility: " .. (mainFrame.Visible and "ON" or "OFF"))
+        print("Menu: " .. (mainFrame.Visible and "SHOWN" or "HIDDEN"))
+    elseif input.KeyCode == Enum.KeyCode.Delete then
+        screenGui:Destroy()
+        print("Menu destroyed")
     end
 end)
 
-print("Cheat Menu Loaded!")
-print("Insert - Show/Hide Menu")
+print("✅ Simple Cheat Menu Loaded!")
+print("📝 Controls: Insert (Show/Hide), Delete (Close)")
+print("🎮 Test Speed first - it should work immediately!")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "CHEAT MENU LOADED",
-    Text = "Insert - Show/Hide Menu",
+    Text = "Insert: Show/Hide | Test Speed first!",
     Duration = 5
 })

@@ -5,6 +5,7 @@ local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
+local mouse = player:GetMouse()
 local main = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local TabButtonsFrame = Instance.new("Frame")
@@ -15,6 +16,7 @@ local speeds = 1
 local isFlying = false
 local isNoClip = false
 local isESPEnabled = false
+local isAimbotEnabled = false
 local currentTab = "Fly"
 local tpwalking = false
 
@@ -179,6 +181,11 @@ local tabs = {
         color = Color3.fromRGB(214, 86, 186), 
         icon = "👁️"
     },
+    Aimbot = {
+        name = "Aimbot",
+        color = Color3.fromRGB(214, 86, 86),
+        icon = "🎯"
+    },
     Settings = {
         name = "Settings",
         color = Color3.fromRGB(214, 174, 86),
@@ -300,6 +307,17 @@ local ESPBoxesToggle = createButton(ESPContent, "Boxes", UDim2.new(0.1, 0, 0.45,
 local ESPInfo = createLabel(ESPContent, "Highlight players with name tags", UDim2.new(0.1, 0, 0.7, 0), UDim2.new(0.8, 0, 0, 50))
 ESPInfo.TextWrapped = true
 ESPInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
+
+-- Содержимое вкладки Aimbot
+local AimbotContent = tabFrames.Aimbot
+
+local AimbotToggle = createButton(AimbotContent, "Enable Aimbot", UDim2.new(0.1, 0, 0.1, 0), UDim2.new(0.8, 0, 0, 40), tabs.Aimbot.color)
+
+local AimbotKeyToggle = createButton(AimbotContent, "Aim Key: Q", UDim2.new(0.1, 0, 0.3, 0), UDim2.new(0.8, 0, 0, 30), Color3.fromRGB(86, 156, 214))
+
+local AimbotInfo = createLabel(AimbotContent, "Hold Q to aim at closest player", UDim2.new(0.1, 0, 0.6, 0), UDim2.new(0.8, 0, 0, 50))
+AimbotInfo.TextWrapped = true
+AimbotInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
 
 -- Содержимое вкладки Settings
 local SettingsContent = tabFrames.Settings
@@ -663,6 +681,89 @@ local function updateESPVisibility()
     end
 end
 
+-- СИСТЕМА AIMBOT
+local aimbotConnection
+local aimKey = Enum.KeyCode.Q
+
+local function getClosestPlayer()
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    local localCharacter = player.Character
+    local localRoot = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+    
+    if not localRoot then return nil end
+    
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            local targetCharacter = otherPlayer.Character
+            local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
+            local targetHumanoid = targetCharacter:FindFirstChildWhichIsA("Humanoid")
+            
+            if targetRoot and targetHumanoid and targetHumanoid.Health > 0 then
+                local distance = (localRoot.Position - targetRoot.Position).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPlayer = otherPlayer
+                end
+            end
+        end
+    end
+    
+    return closestPlayer
+end
+
+local function aimAtPlayer(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
+    
+    local targetCharacter = targetPlayer.Character
+    local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
+    local localCharacter = player.Character
+    local localRoot = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+    
+    if not targetRoot or not localRoot then return end
+    
+    -- Наводим камеру на цель
+    local camera = workspace.CurrentCamera
+    camera.CFrame = CFrame.new(camera.CFrame.Position, targetRoot.Position)
+end
+
+local function enableAimbot()
+    if isAimbotEnabled then return end
+    
+    isAimbotEnabled = true
+    AimbotToggle.Text = "Disable Aimbot"
+    AimbotToggle.BackgroundColor3 = Color3.fromRGB(214, 86, 86)
+    
+    aimbotConnection = RunService.Heartbeat:Connect(function()
+        if not isAimbotEnabled then
+            if aimbotConnection then
+                aimbotConnection:Disconnect()
+            end
+            return
+        end
+        
+        -- Если зажата клавиша Q - целиться в ближайшего игрока
+        if UserInputService:IsKeyDown(aimKey) then
+            local closestPlayer = getClosestPlayer()
+            if closestPlayer then
+                aimAtPlayer(closestPlayer)
+            end
+        end
+    end)
+end
+
+local function disableAimbot()
+    if not isAimbotEnabled then return end
+    
+    isAimbotEnabled = false
+    AimbotToggle.Text = "Enable Aimbot"
+    AimbotToggle.BackgroundColor3 = tabs.Aimbot.color
+    
+    if aimbotConnection then
+        aimbotConnection:Disconnect()
+    end
+end
+
 -- ОБРАБОТЧИКИ КНОПОК
 FlyToggle.MouseButton1Click:Connect(function()
     if isFlying then
@@ -685,6 +786,14 @@ ESPToggle.MouseButton1Click:Connect(function()
         disableESP()
     else
         enableESP()
+    end
+end)
+
+AimbotToggle.MouseButton1Click:Connect(function()
+    if isAimbotEnabled then
+        disableAimbot()
+    else
+        enableAimbot()
     end
 end)
 
@@ -755,6 +864,7 @@ CloseButton.MouseButton1Click:Connect(function()
     disableFlight()
     disableNoClip()
     disableESP()
+    disableAimbot()
     main:Destroy()
 end)
 
@@ -790,6 +900,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         disableFlight()
         disableNoClip()
         disableESP()
+        disableAimbot()
         main:Destroy()
     end
 end)
@@ -813,9 +924,10 @@ switchTab("Fly")
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "SCRIPT LOADED",
-    Text = "Loaded successfully! Insert - Toggle GUI",
+    Text = "Aimbot added! Hold Q to aim",
     Duration = 5
 })
 
 print("SCRIPT loaded!")
 print("Controls: Insert - GUI, Delete - Quick Off, End - Unload")
+print("Aimbot: Hold Q to aim at closest player")

@@ -183,7 +183,7 @@ local ESPToggle = createButton(ESPContent, "Enable ESP", UDim2.new(0.1, 0, 0.1, 
 -- Aimbot Tab
 local AimbotContent = tabFrames.Aimbot
 local AimbotToggle = createButton(AimbotContent, "Enable Aimbot", UDim2.new(0.1, 0, 0.1, 0), UDim2.new(0.8, 0, 0, 40), tabs.Aimbot.color)
-local AimbotInfo = createLabel(AimbotContent, "Hold RightMouse to aim", UDim2.new(0.1, 0, 0.6, 0), UDim2.new(0.8, 0, 0, 50))
+local AimbotInfo = createLabel(AimbotContent, "Hold RightMouse to aim\nIgnores teammates", UDim2.new(0.1, 0, 0.6, 0), UDim2.new(0.8, 0, 0, 50))
 AimbotInfo.TextWrapped = true
 AimbotInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
 
@@ -322,7 +322,7 @@ local function disableESP()
     espHighlights = {}
 end
 
--- AIMBOT SYSTEM
+-- AIMBOT SYSTEM (ИГНОРИРУЕТ ТИММЕЙТОВ)
 local aimbotConnection
 local aimKey = Enum.UserInputType.MouseButton2
 
@@ -335,6 +335,28 @@ local function getClosestPlayer()
     
     for _, otherPlayer in pairs(Players:GetPlayers()) do
         if otherPlayer ~= player and otherPlayer.Character then
+            -- Проверка на тиммейтов
+            local isTeammate = false
+            
+            -- Проверка через Team
+            if player.Team and otherPlayer.Team then
+                if player.Team == otherPlayer.Team then
+                    isTeammate = true
+                end
+            end
+            
+            -- Проверка через TeamColor (для старых игр)
+            if player.TeamColor and otherPlayer.TeamColor then
+                if player.TeamColor == otherPlayer.TeamColor then
+                    isTeammate = true
+                end
+            end
+            
+            -- Если это тиммейт - пропускаем
+            if isTeammate then
+                continue
+            end
+            
             local targetRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
             local humanoid = otherPlayer.Character:FindFirstChildWhichIsA("Humanoid")
             
@@ -440,8 +462,8 @@ switchTab("Fly")
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "SCRIPT LOADED",
-    Text = "RightMouse - Aimbot | Insert - GUI",
+    Text = "RightMouse - Aimbot | Ignores teammates",
     Duration = 5
 })
 
-print("SCRIPT loaded! RightMouse for Aimbot")
+print("SCRIPT loaded! Aimbot ignores teammates")

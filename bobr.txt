@@ -1,4 +1,4 @@
--- Simple Cheat Menu for Duel Murder vs Sheriffs
+-- Advanced Cheat Menu for Duel Murder vs Sheriffs
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -7,9 +7,9 @@ local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 
-print("=== DUEL MURDER CHEAT MENU ===")
+print("=== ADVANCED DUEL MURDER CHEATS ===")
 
--- Простые настройки
+-- Настройки
 local Settings = {
     Speed = false,
     Jump = false,
@@ -18,12 +18,14 @@ local Settings = {
     ESP = false,
     Aimbot = false,
     Wallshoot = false,
-    FOV = false
+    FOV = false,
+    RapidFire = false,
+    NameTags = false
 }
 
--- Создаем простое меню
+-- Создаем меню
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SimpleCheatMenu"
+screenGui.Name = "AdvancedCheatMenu"
 screenGui.Parent = CoreGui
 
 local mainFrame = Instance.new("Frame")
@@ -32,7 +34,7 @@ mainFrame.Parent = screenGui
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Position = UDim2.new(0.05, 0, 0.05, 0)
-mainFrame.Size = UDim2.new(0, 200, 0, 300)
+mainFrame.Size = UDim2.new(0, 220, 0, 350)
 mainFrame.Active = true
 mainFrame.Draggable = true
 
@@ -43,7 +45,7 @@ title.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 title.BorderSizePixel = 0
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Font = Enum.Font.SourceSansBold
-title.Text = "DUEL MURDER CHEATS"
+title.Text = "ADVANCED MURDER CHEATS"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 14
 
@@ -54,7 +56,7 @@ local function createButton(text, position, callback)
     button.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
     button.BorderSizePixel = 0
     button.Position = position
-    button.Size = UDim2.new(0.9, 0, 0, 30)
+    button.Size = UDim2.new(0.9, 0, 0, 25)
     button.Font = Enum.Font.SourceSans
     button.Text = text
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -64,90 +66,109 @@ local function createButton(text, position, callback)
     return button
 end
 
--- 1. SPEED HACK
-local speedBtn = createButton("SPEED: OFF", UDim2.new(0.05, 0, 0.12, 0), function()
+-- Создаем кнопки
+local speedBtn = createButton("SPEED: OFF", UDim2.new(0.05, 0, 0.10, 0), function()
     Settings.Speed = not Settings.Speed
     speedBtn.Text = "SPEED: " .. (Settings.Speed and "ON" or "OFF")
     speedBtn.BackgroundColor3 = Settings.Speed and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
-    print("Speed: " .. (Settings.Speed and "ON" or "OFF"))
 end)
 
--- 2. JUMP POWER
-local jumpBtn = createButton("JUMP: OFF", UDim2.new(0.05, 0, 0.22, 0), function()
+local jumpBtn = createButton("JUMP: OFF", UDim2.new(0.05, 0, 0.17, 0), function()
     Settings.Jump = not Settings.Jump
     jumpBtn.Text = "JUMP: " .. (Settings.Jump and "ON" or "OFF")
     jumpBtn.BackgroundColor3 = Settings.Jump and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
-    print("Jump: " .. (Settings.Jump and "ON" or "OFF"))
 end)
 
--- 3. NOCLIP
-local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.32, 0), function()
+local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.24, 0), function()
     Settings.Noclip = not Settings.Noclip
     noclipBtn.Text = "NOCLIP: " .. (Settings.Noclip and "ON" or "OFF")
     noclipBtn.BackgroundColor3 = Settings.Noclip and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
-    print("Noclip: " .. (Settings.Noclip and "ON" or "OFF"))
 end)
 
--- 4. FLY
-local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.42, 0), function()
+local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.31, 0), function()
     Settings.Fly = not Settings.Fly
     flyBtn.Text = "FLY: " .. (Settings.Fly and "ON" or "OFF")
     flyBtn.BackgroundColor3 = Settings.Fly and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
-    print("Fly: " .. (Settings.Fly and "ON" or "OFF"))
 end)
 
--- 5. ESP
-local espBtn = createButton("ESP: OFF", UDim2.new(0.05, 0, 0.52, 0), function()
+local espBtn = createButton("ESP: OFF", UDim2.new(0.05, 0, 0.38, 0), function()
     Settings.ESP = not Settings.ESP
     espBtn.Text = "ESP: " .. (Settings.ESP and "ON" or "OFF")
     espBtn.BackgroundColor3 = Settings.ESP and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
-    print("ESP: " .. (Settings.ESP and "ON" or "OFF"))
 end)
 
--- 6. AIMBOT
-local aimbotBtn = createButton("AIMBOT: OFF", UDim2.new(0.05, 0, 0.62, 0), function()
+local nametagsBtn = createButton("NAME TAGS: OFF", UDim2.new(0.05, 0, 0.45, 0), function()
+    Settings.NameTags = not Settings.NameTags
+    nametagsBtn.Text = "NAME TAGS: " .. (Settings.NameTags and "ON" or "OFF")
+    nametagsBtn.BackgroundColor3 = Settings.NameTags and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
+end)
+
+local aimbotBtn = createButton("AIMBOT: OFF", UDim2.new(0.05, 0, 0.52, 0), function()
     Settings.Aimbot = not Settings.Aimbot
     aimbotBtn.Text = "AIMBOT: " .. (Settings.Aimbot and "ON" or "OFF")
     aimbotBtn.BackgroundColor3 = Settings.Aimbot and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
-    print("Aimbot: " .. (Settings.Aimbot and "ON" or "OFF"))
 end)
 
--- 7. WALLSHOOT
-local wallshootBtn = createButton("WALLSHOOT: OFF", UDim2.new(0.05, 0, 0.72, 0), function()
+local wallshootBtn = createButton("WALLSHOOT: OFF", UDim2.new(0.05, 0, 0.59, 0), function()
     Settings.Wallshoot = not Settings.Wallshoot
     wallshootBtn.Text = "WALLSHOOT: " .. (Settings.Wallshoot and "ON" or "OFF")
     wallshootBtn.BackgroundColor3 = Settings.Wallshoot and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
-    print("Wallshoot: " .. (Settings.Wallshoot and "ON" or "OFF"))
-    
-    -- Включаем/выключаем стрельбу через стены
     setupWallshoot()
 end)
 
--- 8. FOV CHANGER
-local fovBtn = createButton("FOV: OFF", UDim2.new(0.05, 0, 0.82, 0), function()
+local rapidfireBtn = createButton("RAPID FIRE: OFF", UDim2.new(0.05, 0, 0.66, 0), function()
+    Settings.RapidFire = not Settings.RapidFire
+    rapidfireBtn.Text = "RAPID FIRE: " .. (Settings.RapidFire and "ON" or "OFF")
+    rapidfireBtn.BackgroundColor3 = Settings.RapidFire and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
+    setupRapidFire()
+end)
+
+local fovBtn = createButton("FOV: OFF", UDim2.new(0.05, 0, 0.73, 0), function()
     Settings.FOV = not Settings.FOV
     fovBtn.Text = "FOV: " .. (Settings.FOV and "ON" or "OFF")
     fovBtn.BackgroundColor3 = Settings.FOV and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
-    print("FOV: " .. (Settings.FOV and "ON" or "OFF"))
 end)
 
 -- Информация
 local infoLabel = Instance.new("TextLabel")
 infoLabel.Parent = mainFrame
 infoLabel.BackgroundTransparency = 1
-infoLabel.Position = UDim2.new(0.05, 0, 0.92, 0)
-infoLabel.Size = UDim2.new(0.9, 0, 0, 20)
+infoLabel.Position = UDim2.new(0.05, 0, 0.85, 0)
+infoLabel.Size = UDim2.new(0.9, 0, 0, 40)
 infoLabel.Font = Enum.Font.SourceSans
-infoLabel.Text = "Insert: Hide | RMB: Aimbot"
+infoLabel.Text = "Insert: Hide Menu\nRMB: Aimbot | F5: Reset FOV"
 infoLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 infoLabel.TextSize = 10
+infoLabel.TextWrapped = true
 
 -- Система функций
 local highlights = {}
+local nameTags = {}
 local flyBodyVelocity
 local originalRaycast
+local originalFireRate = {}
 
--- Функция для получения ближайшего врага
+-- Функция для проверки тиммейта
+local function isTeammate(otherPlayer)
+    -- Проверяем команды в Duel Murder
+    if player.Team and otherPlayer.Team then
+        return player.Team == otherPlayer.Team
+    end
+    
+    -- Альтернативная проверка для Murder vs Sheriff
+    local playerName = player.Name:lower()
+    local otherName = otherPlayer.Name:lower()
+    
+    -- Если у игрока в имени есть "murder" или "sheriff"
+    if (playerName:find("murder") and otherName:find("murder")) or
+       (playerName:find("sheriff") and otherName:find("sheriff")) then
+        return true
+    end
+    
+    return false
+end
+
+-- Функция для получения ближайшего врага (игнорирует тиммейтов и себя)
 local function getClosestEnemy()
     local closestPlayer = nil
     local closestDistance = math.huge
@@ -159,7 +180,9 @@ local function getClosestEnemy()
         -- Игнорируем себя
         if otherPlayer == player then continue end
         
-        -- В Duel Murder обычно две команды: Murder и Sheriff
+        -- Игнорируем тиммейтов
+        if isTeammate(otherPlayer) then continue end
+        
         if otherPlayer.Character then
             local humanoid = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
             local head = otherPlayer.Character:FindFirstChild("Head")
@@ -177,59 +200,128 @@ local function getClosestEnemy()
     return closestPlayer
 end
 
--- Система Wallshoot для Duel Murder
+-- Система Wallshoot
 local function setupWallshoot()
     if Settings.Wallshoot then
-        -- Сохраняем оригинальный Raycast
         originalRaycast = workspace.FindPartOnRayWithIgnoreList
         
-        -- Переопределяем Raycast для игнорирования стен
         workspace.FindPartOnRayWithIgnoreList = function(workspace, ray, ignoreList, ...)
             local newIgnoreList = {}
             
-            -- Копируем оригинальный список
             if ignoreList then
                 for _, item in ipairs(ignoreList) do
                     table.insert(newIgnoreList, item)
                 end
             end
             
-            -- Добавляем все стены и препятствия в игнор
+            -- Игнорируем все стены и препятствия
             for _, part in ipairs(Workspace:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    -- Игнорируем стены, пол, препятствия
+                if part:IsA("BasePart") and not part:IsDescendantOf(player.Character) then
                     if part.Name:lower():find("wall") or 
                        part.Name:lower():find("part") or 
                        part.Name:lower():find("floor") or 
                        part.Name:lower():find("ceiling") or
                        part.Name:lower():find("barrier") or
                        part.Name:lower():find("obstacle") or
-                       part.Name:lower():find("building") then
+                       part.Name:lower():find("building") or
+                       part.Name:lower():find("map") then
                         table.insert(newIgnoreList, part)
-                    end
-                end
-            end
-            
-            -- Игнорируем всю карту
-            for _, part in ipairs(Workspace:GetChildren()) do
-                if part:IsA("Model") and (part.Name:lower():find("map") or part.Name:lower():find("arena")) then
-                    for _, child in ipairs(part:GetDescendants()) do
-                        if child:IsA("BasePart") then
-                            table.insert(newIgnoreList, child)
-                        end
                     end
                 end
             end
             
             return originalRaycast(workspace, ray, newIgnoreList, ...)
         end
-        
-        print("✅ Wallshoot activated - shooting through walls")
+        print("✅ Wallshoot activated")
     else
-        -- Восстанавливаем оригинальный Raycast
         if originalRaycast then
             workspace.FindPartOnRayWithIgnoreList = originalRaycast
             print("❌ Wallshoot deactivated")
+        end
+    end
+end
+
+-- Система быстрой стрельбы
+local function setupRapidFire()
+    if Settings.RapidFire then
+        spawn(function()
+            while Settings.RapidFire do
+                local character = player.Character
+                if character then
+                    -- Ищем оружие в инвентаре
+                    for _, tool in pairs(character:GetChildren()) do
+                        if tool:IsA("Tool") then
+                            -- Активируем оружие (симуляция быстрой стрельбы)
+                            tool:Activate()
+                        end
+                    end
+                    
+                    -- Ищем оружие в руках
+                    local backpack = player:FindFirstChild("Backpack")
+                    if backpack then
+                        for _, tool in pairs(backpack:GetChildren()) do
+                            if tool:IsA("Tool") then
+                                tool:Activate()
+                            end
+                        end
+                    end
+                end
+                wait(0.1) -- Скорость стрельбы
+            end
+        end)
+        print("✅ Rapid Fire activated")
+    else
+        print("❌ Rapid Fire deactivated")
+    end
+end
+
+-- Система Name Tags
+local function updateNameTags()
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            local head = otherPlayer.Character:FindFirstChild("Head")
+            if head then
+                if Settings.NameTags then
+                    if not nameTags[otherPlayer] then
+                        -- Создаем BillBoardGui для Name Tag
+                        local billboard = Instance.new("BillboardGui")
+                        billboard.Name = "NameTag"
+                        billboard.Adornee = head
+                        billboard.Size = UDim2.new(0, 200, 0, 50)
+                        billboard.StudsOffset = Vector3.new(0, 3, 0)
+                        billboard.AlwaysOnTop = true
+                        billboard.MaxDistance = 100
+                        
+                        local textLabel = Instance.new("TextLabel")
+                        textLabel.Parent = billboard
+                        textLabel.BackgroundTransparency = 1
+                        textLabel.Size = UDim2.new(1, 0, 1, 0)
+                        textLabel.Font = Enum.Font.SourceSansBold
+                        textLabel.TextSize = 14
+                        textLabel.TextColor3 = Color3.new(1, 1, 1)
+                        textLabel.TextStrokeTransparency = 0
+                        textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+                        
+                        billboard.Parent = head
+                        nameTags[otherPlayer] = billboard
+                    end
+                    
+                    -- Обновляем текст
+                    local textLabel = nameTags[otherPlayer]:FindFirstChild("TextLabel")
+                    if textLabel then
+                        local teamColor = isTeammate(otherPlayer) and Color3.new(0, 0, 1) or Color3.new(1, 0, 0)
+                        local teamText = isTeammate(otherPlayer) and "[TEAM]" or "[ENEMY]"
+                        textLabel.Text = teamText .. " " .. otherPlayer.Name
+                        textLabel.TextColor3 = teamColor
+                    end
+                    
+                else
+                    if nameTags[otherPlayer] then
+                        nameTags[otherPlayer]:Destroy()
+                        nameTags[otherPlayer] = nil
+                    end
+                end
+            end
         end
     end
 end
@@ -306,7 +398,8 @@ RunService.Heartbeat:Connect(function()
             if Settings.ESP then
                 if not highlights[otherPlayer] then
                     local highlight = Instance.new("Highlight")
-                    highlight.FillColor = Color3.new(1, 0, 0) -- Красный для врагов
+                    local color = isTeammate(otherPlayer) and Color3.new(0, 0, 1) or Color3.new(1, 0, 0)
+                    highlight.FillColor = color
                     highlight.OutlineColor = Color3.new(1, 1, 1)
                     highlight.FillTransparency = 0.5
                     highlight.OutlineTransparency = 0
@@ -314,6 +407,10 @@ RunService.Heartbeat:Connect(function()
                     highlight.Parent = otherPlayer.Character
                     highlight.Adornee = otherPlayer.Character
                     highlights[otherPlayer] = highlight
+                else
+                    -- Обновляем цвет ESP
+                    local color = isTeammate(otherPlayer) and Color3.new(0, 0, 1) or Color3.new(1, 0, 0)
+                    highlights[otherPlayer].FillColor = color
                 end
             else
                 if highlights[otherPlayer] then
@@ -324,7 +421,10 @@ RunService.Heartbeat:Connect(function()
         end
     end
     
-    -- Aimbot (работает только при зажатой ПКМ)
+    -- Name Tags
+    updateNameTags()
+    
+    -- Aimbot (только при зажатой ПКМ)
     if Settings.Aimbot and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
         local closestEnemy = getClosestEnemy()
         if closestEnemy and closestEnemy.Character then
@@ -340,13 +440,14 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Обработка новых игроков для ESP
+-- Обработка новых игроков
 Players.PlayerAdded:Connect(function(newPlayer)
     newPlayer.CharacterAdded:Connect(function(character)
         wait(1)
         if Settings.ESP and character then
             local highlight = Instance.new("Highlight")
-            highlight.FillColor = Color3.new(1, 0, 0)
+            local color = isTeammate(newPlayer) and Color3.new(0, 0, 1) or Color3.new(1, 0, 0)
+            highlight.FillColor = color
             highlight.OutlineColor = Color3.new(1, 1, 1)
             highlight.FillTransparency = 0.5
             highlight.OutlineTransparency = 0
@@ -364,37 +465,31 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     
     if input.KeyCode == Enum.KeyCode.Insert then
         mainFrame.Visible = not mainFrame.Visible
-        print("Menu: " .. (mainFrame.Visible and "SHOWN" or "HIDDEN"))
     elseif input.KeyCode == Enum.KeyCode.Delete then
         screenGui:Destroy()
-        -- Восстанавливаем оригинальный Raycast при удалении меню
         if originalRaycast then
             workspace.FindPartOnRayWithIgnoreList = originalRaycast
         end
-        print("Menu destroyed")
     elseif input.KeyCode == Enum.KeyCode.F5 then
-        -- Сброс FOV
         local camera = workspace.CurrentCamera
         if camera then
             camera.FieldOfView = 70
             Settings.FOV = false
             fovBtn.Text = "FOV: OFF"
             fovBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-            print("FOV reset to 70")
         end
     end
 end)
 
-print("✅ Duel Murder Cheat Menu Loaded!")
-print("🎯 Aimbot: Hold Right Mouse Button")
+print("✅ Advanced Duel Murder Cheats Loaded!")
+print("🎯 Aimbot: Hold RMB (ignores team & self)")
+print("🔫 Rapid Fire: Automatic fast shooting")
+print("🏷️ Name Tags: Team/Enemy indicators")
+print("🔴 ESP: Team colors (Blue=Team, Red=Enemy)")
 print("🔫 Wallshoot: Shoot through walls")
-print("🔴 ESP: Red highlights on enemies")
-print("⚡ Speed: 50 walk speed")
-print("🕶️ Insert: Hide menu")
 
--- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "DUEL MURDER CHEATS",
-    Text = "Hold RMB for Aimbot!",
+    Title = "ADVANCED CHEATS LOADED",
+    Text = "RMB Aimbot + Rapid Fire + Name Tags!",
     Duration = 5
 })

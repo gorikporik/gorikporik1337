@@ -1,57 +1,57 @@
--- Complete Cheat Menu with Aimbot, ESP, Wallshoot and FOV Reset
+-- Simple Cheat Menu for Duel Murder vs Sheriffs
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 
-print("=== COMPLETE CHEAT MENU ===")
+print("=== DUEL MURDER CHEAT MENU ===")
 
--- Создаем меню
+-- Простые настройки
+local Settings = {
+    Speed = false,
+    Jump = false,
+    Noclip = false,
+    Fly = false,
+    ESP = false,
+    Aimbot = false,
+    Wallshoot = false,
+    FOV = false
+}
+
+-- Создаем простое меню
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CompleteCheatMenu"
+screenGui.Name = "SimpleCheatMenu"
 screenGui.Parent = CoreGui
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Parent = screenGui
-mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 mainFrame.BorderSizePixel = 0
-mainFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
-mainFrame.Size = UDim2.new(0, 250, 0, 450)
+mainFrame.Position = UDim2.new(0.05, 0, 0.05, 0)
+mainFrame.Size = UDim2.new(0, 200, 0, 300)
 mainFrame.Active = true
 mainFrame.Draggable = true
 
+-- Заголовок
 local title = Instance.new("TextLabel")
 title.Parent = mainFrame
-title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+title.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 title.BorderSizePixel = 0
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Font = Enum.Font.SourceSansBold
-title.Text = "COMPLETE CHEATS v4.0"
+title.Text = "DUEL MURDER CHEATS"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 14
 
--- Переменные для статуса
-local speedEnabled = false
-local jumpEnabled = false
-local noclipEnabled = false
-local flyEnabled = false
-local espEnabled = false
-local aimbotEnabled = false
-local wallshootEnabled = false
-local fovEnabled = false
-local currentFov = 70
-local autoAimEnabled = false
-
 -- Функция для создания кнопок
-local function createButton(text, position)
+local function createButton(text, position, callback)
     local button = Instance.new("TextButton")
     button.Parent = mainFrame
-    button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
     button.BorderSizePixel = 0
     button.Position = position
     button.Size = UDim2.new(0.9, 0, 0, 30)
@@ -60,303 +60,126 @@ local function createButton(text, position)
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
     button.TextSize = 12
     
+    button.MouseButton1Click:Connect(callback)
     return button
 end
 
--- Функция для создания текстовой метки
-local function createLabel(text, position)
-    local label = Instance.new("TextLabel")
-    label.Parent = mainFrame
-    label.BackgroundTransparency = 1
-    label.Position = position
-    label.Size = UDim2.new(0.9, 0, 0, 20)
-    label.Font = Enum.Font.SourceSans
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 11
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    
-    return label
-end
-
 -- 1. SPEED HACK
-local speedBtn = createButton("SPEED: OFF", UDim2.new(0.05, 0, 0.10, 0))
-speedBtn.MouseButton1Click:Connect(function()
-    speedEnabled = not speedEnabled
-    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-    
-    if humanoid then
-        if speedEnabled then
-            humanoid.WalkSpeed = 50
-            speedBtn.Text = "SPEED: ON"
-            speedBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            print("✅ Speed ON - WalkSpeed: 50")
-        else
-            humanoid.WalkSpeed = 16
-            speedBtn.Text = "SPEED: OFF"
-            speedBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            print("❌ Speed OFF - WalkSpeed: 16")
-        end
-    else
-        print("⚠️ No humanoid found for speed!")
-    end
+local speedBtn = createButton("SPEED: OFF", UDim2.new(0.05, 0, 0.12, 0), function()
+    Settings.Speed = not Settings.Speed
+    speedBtn.Text = "SPEED: " .. (Settings.Speed and "ON" or "OFF")
+    speedBtn.BackgroundColor3 = Settings.Speed and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
+    print("Speed: " .. (Settings.Speed and "ON" or "OFF"))
 end)
 
 -- 2. JUMP POWER
-local jumpBtn = createButton("JUMP: OFF", UDim2.new(0.05, 0, 0.16, 0))
-jumpBtn.MouseButton1Click:Connect(function()
-    jumpEnabled = not jumpEnabled
-    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-    
-    if humanoid then
-        if jumpEnabled then
-            humanoid.JumpPower = 100
-            jumpBtn.Text = "JUMP: ON"
-            jumpBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            print("✅ Jump ON - JumpPower: 100")
-        else
-            humanoid.JumpPower = 50
-            jumpBtn.Text = "JUMP: OFF"
-            jumpBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            print("❌ Jump OFF - JumpPower: 50")
-        end
-    else
-        print("⚠️ No humanoid found for jump!")
-    end
+local jumpBtn = createButton("JUMP: OFF", UDim2.new(0.05, 0, 0.22, 0), function()
+    Settings.Jump = not Settings.Jump
+    jumpBtn.Text = "JUMP: " .. (Settings.Jump and "ON" or "OFF")
+    jumpBtn.BackgroundColor3 = Settings.Jump and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
+    print("Jump: " .. (Settings.Jump and "ON" or "OFF"))
 end)
 
 -- 3. NOCLIP
-local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.22, 0))
-noclipBtn.MouseButton1Click:Connect(function()
-    noclipEnabled = not noclipEnabled
-    
-    if noclipEnabled then
-        noclipBtn.Text = "NOCLIP: ON"
-        noclipBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        print("✅ NoClip ON")
-        
-        -- Включить ноклип
-        spawn(function()
-            while noclipEnabled do
-                local character = player.Character
-                if character then
-                    for _, part in pairs(character:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                        end
-                    end
-                end
-                wait(0.1)
-            end
-        end)
-    else
-        noclipBtn.Text = "NOCLIP: OFF"
-        noclipBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        print("❌ NoClip OFF")
-        
-        -- Выключить ноклип
-        local character = player.Character
-        if character then
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-        end
-    end
+local noclipBtn = createButton("NOCLIP: OFF", UDim2.new(0.05, 0, 0.32, 0), function()
+    Settings.Noclip = not Settings.Noclip
+    noclipBtn.Text = "NOCLIP: " .. (Settings.Noclip and "ON" or "OFF")
+    noclipBtn.BackgroundColor3 = Settings.Noclip and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
+    print("Noclip: " .. (Settings.Noclip and "ON" or "OFF"))
 end)
 
 -- 4. FLY
-local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.28, 0))
-local flyBodyVelocity
-
-flyBtn.MouseButton1Click:Connect(function()
-    flyEnabled = not flyEnabled
-    
-    if flyEnabled then
-        flyBtn.Text = "FLY: ON"
-        flyBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        print("✅ Fly ON")
-        
-        -- Включить полет
-        local character = player.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            flyBodyVelocity = Instance.new("BodyVelocity")
-            flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            flyBodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
-            flyBodyVelocity.Parent = character.HumanoidRootPart
-            
-            -- Двигаем
-            spawn(function()
-                while flyEnabled and character do
-                    local cam = workspace.CurrentCamera
-                    local moveDir = Vector3.new(0, 0, 0)
-                    
-                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
-                    
-                    if flyBodyVelocity then
-                        flyBodyVelocity.Velocity = moveDir * 50
-                    end
-                    wait()
-                end
-            end)
-        end
-    else
-        flyBtn.Text = "FLY: OFF"
-        flyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        print("❌ Fly OFF")
-        
-        -- Выключить полет
-        if flyBodyVelocity then
-            flyBodyVelocity:Destroy()
-            flyBodyVelocity = nil
-        end
-    end
+local flyBtn = createButton("FLY: OFF", UDim2.new(0.05, 0, 0.42, 0), function()
+    Settings.Fly = not Settings.Fly
+    flyBtn.Text = "FLY: " .. (Settings.Fly and "ON" or "OFF")
+    flyBtn.BackgroundColor3 = Settings.Fly and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
+    print("Fly: " .. (Settings.Fly and "ON" or "OFF"))
 end)
 
 -- 5. ESP
-local espBtn = createButton("ESP: OFF", UDim2.new(0.05, 0, 0.34, 0))
-local highlights = {}
-local espColors = {
-    enemy = Color3.new(1, 0, 0),    -- Красный для врагов
-    teammate = Color3.new(0, 0, 1), -- Синий для тиммейтов
-    neutral = Color3.new(0, 1, 0)   -- Зеленый для нейтральных
-}
+local espBtn = createButton("ESP: OFF", UDim2.new(0.05, 0, 0.52, 0), function()
+    Settings.ESP = not Settings.ESP
+    espBtn.Text = "ESP: " .. (Settings.ESP and "ON" or "OFF")
+    espBtn.BackgroundColor3 = Settings.ESP and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
+    print("ESP: " .. (Settings.ESP and "ON" or "OFF"))
+end)
 
-espBtn.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
+-- 6. AIMBOT
+local aimbotBtn = createButton("AIMBOT: OFF", UDim2.new(0.05, 0, 0.62, 0), function()
+    Settings.Aimbot = not Settings.Aimbot
+    aimbotBtn.Text = "AIMBOT: " .. (Settings.Aimbot and "ON" or "OFF")
+    aimbotBtn.BackgroundColor3 = Settings.Aimbot and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
+    print("Aimbot: " .. (Settings.Aimbot and "ON" or "OFF"))
+end)
+
+-- 7. WALLSHOOT
+local wallshootBtn = createButton("WALLSHOOT: OFF", UDim2.new(0.05, 0, 0.72, 0), function()
+    Settings.Wallshoot = not Settings.Wallshoot
+    wallshootBtn.Text = "WALLSHOOT: " .. (Settings.Wallshoot and "ON" or "OFF")
+    wallshootBtn.BackgroundColor3 = Settings.Wallshoot and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
+    print("Wallshoot: " .. (Settings.Wallshoot and "ON" or "OFF"))
     
-    if espEnabled then
-        espBtn.Text = "ESP: ON"
-        espBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        print("✅ ESP ON")
+    -- Включаем/выключаем стрельбу через стены
+    setupWallshoot()
+end)
+
+-- 8. FOV CHANGER
+local fovBtn = createButton("FOV: OFF", UDim2.new(0.05, 0, 0.82, 0), function()
+    Settings.FOV = not Settings.FOV
+    fovBtn.Text = "FOV: " .. (Settings.FOV and "ON" or "OFF")
+    fovBtn.BackgroundColor3 = Settings.FOV and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 60)
+    print("FOV: " .. (Settings.FOV and "ON" or "OFF"))
+end)
+
+-- Информация
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Parent = mainFrame
+infoLabel.BackgroundTransparency = 1
+infoLabel.Position = UDim2.new(0.05, 0, 0.92, 0)
+infoLabel.Size = UDim2.new(0.9, 0, 0, 20)
+infoLabel.Font = Enum.Font.SourceSans
+infoLabel.Text = "Insert: Hide | RMB: Aimbot"
+infoLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+infoLabel.TextSize = 10
+
+-- Система функций
+local highlights = {}
+local flyBodyVelocity
+local originalRaycast
+
+-- Функция для получения ближайшего врага
+local function getClosestEnemy()
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    local localRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    
+    if not localRoot then return nil end
+    
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        -- Игнорируем себя
+        if otherPlayer == player then continue end
         
-        -- Функция для получения цвета ESP
-        local function getEspColor(targetPlayer)
-            if player.Team and targetPlayer.Team then
-                if player.Team == targetPlayer.Team then
-                    return espColors.teammate
-                else
-                    return espColors.enemy
+        -- В Duel Murder обычно две команды: Murder и Sheriff
+        if otherPlayer.Character then
+            local humanoid = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
+            local head = otherPlayer.Character:FindFirstChild("Head")
+            
+            if humanoid and humanoid.Health > 0 and head then
+                local distance = (localRoot.Position - head.Position).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPlayer = otherPlayer
                 end
             end
-            return espColors.neutral
         end
-        
-        -- Включить ESP для всех игроков
-        for _, otherPlayer in pairs(Players:GetPlayers()) do
-            if otherPlayer ~= player and otherPlayer.Character then
-                local highlight = Instance.new("Highlight")
-                highlight.FillColor = getEspColor(otherPlayer)
-                highlight.OutlineColor = Color3.new(1, 1, 1)
-                highlight.FillTransparency = 0.5
-                highlight.OutlineTransparency = 0
-                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                highlight.Parent = otherPlayer.Character
-                highlight.Adornee = otherPlayer.Character
-                highlights[otherPlayer] = highlight
-                
-                print("🔴 ESP added for: " .. otherPlayer.Name)
-            end
-        end
-        
-        -- Обработка новых игроков
-        Players.PlayerAdded:Connect(function(newPlayer)
-            if espEnabled then
-                newPlayer.CharacterAdded:Connect(function(character)
-                    wait(1)
-                    if espEnabled and character then
-                        local highlight = Instance.new("Highlight")
-                        highlight.FillColor = getEspColor(newPlayer)
-                        highlight.OutlineColor = Color3.new(1, 1, 1)
-                        highlight.FillTransparency = 0.5
-                        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                        highlight.Parent = character
-                        highlight.Adornee = character
-                        highlights[newPlayer] = highlight
-                        print("🔴 ESP added for new player: " .. newPlayer.Name)
-                    end
-                end)
-            end
-        end)
-        
-    else
-        espBtn.Text = "ESP: OFF"
-        espBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        print("❌ ESP OFF")
-        
-        -- Выключить ESP
-        for _, highlight in pairs(highlights) do
-            if highlight then
-                highlight:Destroy()
-            end
-        end
-        highlights = {}
     end
-end)
-
--- 6. FOV CHANGER
-local fovBtn = createButton("FOV: 70 (OFF)", UDim2.new(0.05, 0, 0.40, 0))
-fovBtn.MouseButton1Click:Connect(function()
-    fovEnabled = not fovEnabled
-    local camera = workspace.CurrentCamera
     
-    if camera then
-        if fovEnabled then
-            currentFov = 120
-            camera.FieldOfView = currentFov
-            fovBtn.Text = "FOV: 120 (ON)"
-            fovBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            print("✅ FOV ON - FieldOfView: 120")
-        else
-            currentFov = 70
-            camera.FieldOfView = currentFov
-            fovBtn.Text = "FOV: 70 (OFF)"
-            fovBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            print("❌ FOV OFF - FieldOfView: 70")
-        end
-    end
-end)
+    return closestPlayer
+end
 
--- 7. FOV RESET
-local fovResetBtn = createButton("RESET FOV TO 70", UDim2.new(0.05, 0, 0.46, 0))
-fovResetBtn.MouseButton1Click:Connect(function()
-    local camera = workspace.CurrentCamera
-    if camera then
-        camera.FieldOfView = 70
-        currentFov = 70
-        fovEnabled = false
-        fovBtn.Text = "FOV: 70 (OFF)"
-        fovBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        print("🔄 FOV Reset to 70")
-        
-        -- Уведомление
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "FOV RESET",
-            Text = "Field of View reset to 70",
-            Duration = 2
-        })
-    end
-end)
-
--- 8. WALLSHOOT (ИСПРАВЛЕННЫЙ)
-local wallshootBtn = createButton("WALLSHOOT: OFF", UDim2.new(0.05, 0, 0.52, 0))
-local originalRaycast
-local wallshootConnection
-
-wallshootBtn.MouseButton1Click:Connect(function()
-    wallshootEnabled = not wallshootEnabled
-    
-    if wallshootEnabled then
-        wallshootBtn.Text = "WALLSHOOT: ON"
-        wallshootBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        print("✅ Wallshoot ON - Shooting through walls enabled")
-        
+-- Система Wallshoot для Duel Murder
+local function setupWallshoot()
+    if Settings.Wallshoot then
         -- Сохраняем оригинальный Raycast
         originalRaycast = workspace.FindPartOnRayWithIgnoreList
         
@@ -364,31 +187,32 @@ wallshootBtn.MouseButton1Click:Connect(function()
         workspace.FindPartOnRayWithIgnoreList = function(workspace, ray, ignoreList, ...)
             local newIgnoreList = {}
             
-            -- Копируем оригинальный ignoreList
+            -- Копируем оригинальный список
             if ignoreList then
                 for _, item in ipairs(ignoreList) do
                     table.insert(newIgnoreList, item)
                 end
             end
             
-            -- Добавляем все стены и препятствия в ignoreList
+            -- Добавляем все стены и препятствия в игнор
             for _, part in ipairs(Workspace:GetDescendants()) do
                 if part:IsA("BasePart") then
-                    -- Игнорируем стены, пол, потолок и другие препятствия
+                    -- Игнорируем стены, пол, препятствия
                     if part.Name:lower():find("wall") or 
                        part.Name:lower():find("part") or 
                        part.Name:lower():find("floor") or 
                        part.Name:lower():find("ceiling") or
                        part.Name:lower():find("barrier") or
-                       part.Name:lower():find("obstacle") then
+                       part.Name:lower():find("obstacle") or
+                       part.Name:lower():find("building") then
                         table.insert(newIgnoreList, part)
                     end
                 end
             end
             
-            -- Добавляем все части карты
+            -- Игнорируем всю карту
             for _, part in ipairs(Workspace:GetChildren()) do
-                if part:IsA("Model") and part.Name:lower():find("map") then
+                if part:IsA("Model") and (part.Name:lower():find("map") or part.Name:lower():find("arena")) then
                     for _, child in ipairs(part:GetDescendants()) do
                         if child:IsA("BasePart") then
                             table.insert(newIgnoreList, child)
@@ -400,236 +224,139 @@ wallshootBtn.MouseButton1Click:Connect(function()
             return originalRaycast(workspace, ray, newIgnoreList, ...)
         end
         
-        -- Альтернативный метод через изменение Raycast параметров
-        wallshootConnection = RunService.Heartbeat:Connect(function()
-            if wallshootEnabled then
-                -- Автоматически находим и изменяем оружие
-                local character = player.Character
-                if character then
-                    for _, tool in ipairs(character:GetChildren()) do
-                        if tool:IsA("Tool") then
-                            -- Изменяем параметры инструмента для стрельбы через стены
-                            local handle = tool:FindFirstChild("Handle")
-                            if handle then
-                                handle.CanCollide = false
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-        
+        print("✅ Wallshoot activated - shooting through walls")
     else
-        wallshootBtn.Text = "WALLSHOOT: OFF"
-        wallshootBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        print("❌ Wallshoot OFF")
-        
         -- Восстанавливаем оригинальный Raycast
         if originalRaycast then
             workspace.FindPartOnRayWithIgnoreList = originalRaycast
-        end
-        
-        -- Отключаем соединение
-        if wallshootConnection then
-            wallshootConnection:Disconnect()
-            wallshootConnection = nil
+            print("❌ Wallshoot deactivated")
         end
     end
-end)
-
--- 9. AIMBOT (АВТОМАТИЧЕСКИЙ БЕЗ ПКМ)
-local aimbotBtn = createButton("AIMBOT: OFF", UDim2.new(0.05, 0, 0.58, 0))
-local aimbotConnection
-local fovCircle = nil
-local aimbotFov = 100  -- FOV для аимбота
-
--- Создаем FOV круг для аимбота
-local function createFovCircle()
-    if fovCircle then fovCircle:Remove() end
-    
-    local circle = Drawing.new("Circle")
-    circle.Visible = true
-    circle.Thickness = 2
-    circle.Color = Color3.new(1, 1, 1)
-    circle.Transparency = 1
-    circle.Filled = false
-    circle.Radius = aimbotFov
-    circle.Position = Vector2.new(
-        workspace.CurrentCamera.ViewportSize.X / 2,
-        workspace.CurrentCamera.ViewportSize.Y / 2
-    )
-    
-    fovCircle = circle
-    return circle
 end
 
--- Обновление позиции FOV круга
-RunService.RenderStepped:Connect(function()
-    if fovCircle then
-        fovCircle.Position = Vector2.new(
-            workspace.CurrentCamera.ViewportSize.X / 2,
-            workspace.CurrentCamera.ViewportSize.Y / 2
-        )
+-- Основной цикл
+RunService.Heartbeat:Connect(function()
+    -- Speed Hack
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    if humanoid then
+        if Settings.Speed then
+            humanoid.WalkSpeed = 50
+        else
+            humanoid.WalkSpeed = 16
+        end
+        
+        if Settings.Jump then
+            humanoid.JumpPower = 100
+        else
+            humanoid.JumpPower = 50
+        end
     end
-end)
-
--- Функция для поиска ближайшего врага
-local function getClosestEnemy()
-    local closestPlayer = nil
-    local closestDistance = math.huge
-    local localRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    
+    -- Noclip
+    if Settings.Noclip and player.Character then
+        for _, part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+    
+    -- Fly
+    if Settings.Fly then
+        if not flyBodyVelocity and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            flyBodyVelocity = Instance.new("BodyVelocity")
+            flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            flyBodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+            flyBodyVelocity.Parent = player.Character.HumanoidRootPart
+        end
+        
+        if flyBodyVelocity then
+            local cam = workspace.CurrentCamera
+            local moveDir = Vector3.new(0, 0, 0)
+            
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+            
+            flyBodyVelocity.Velocity = moveDir * 50
+        end
+    else
+        if flyBodyVelocity then
+            flyBodyVelocity:Destroy()
+            flyBodyVelocity = nil
+        end
+    end
+    
+    -- FOV Changer
     local camera = workspace.CurrentCamera
+    if camera then
+        if Settings.FOV then
+            camera.FieldOfView = 120
+        else
+            camera.FieldOfView = 70
+        end
+    end
     
-    if not localRoot or not camera then return nil end
-    
-    local mousePos = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
-    
+    -- ESP
     for _, otherPlayer in pairs(Players:GetPlayers()) do
         if otherPlayer ~= player and otherPlayer.Character then
-            -- Проверка на тиммейтов
-            local isTeammate = false
-            
-            if player.Team and otherPlayer.Team then
-                if player.Team == otherPlayer.Team then
-                    isTeammate = true
+            if Settings.ESP then
+                if not highlights[otherPlayer] then
+                    local highlight = Instance.new("Highlight")
+                    highlight.FillColor = Color3.new(1, 0, 0) -- Красный для врагов
+                    highlight.OutlineColor = Color3.new(1, 1, 1)
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineTransparency = 0
+                    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    highlight.Parent = otherPlayer.Character
+                    highlight.Adornee = otherPlayer.Character
+                    highlights[otherPlayer] = highlight
                 end
-            end
-            
-            if not isTeammate then
-                local targetRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                local humanoid = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
-                
-                if targetRoot and humanoid and humanoid.Health > 0 then
-                    -- Конвертируем мировую позицию в экранную
-                    local screenPoint, onScreen = camera:WorldToViewportPoint(targetRoot.Position)
-                    
-                    if onScreen then
-                        local screenPos = Vector2.new(screenPoint.X, screenPoint.Y)
-                        local distance = (mousePos - screenPos).Magnitude
-                        
-                        -- Проверяем находится ли враг в FOV
-                        if distance <= aimbotFov and distance < closestDistance then
-                            closestDistance = distance
-                            closestPlayer = otherPlayer
-                        end
-                    end
+            else
+                if highlights[otherPlayer] then
+                    highlights[otherPlayer]:Destroy()
+                    highlights[otherPlayer] = nil
                 end
             end
         end
     end
     
-    return closestPlayer
-end
-
-aimbotBtn.MouseButton1Click:Connect(function()
-    aimbotEnabled = not aimbotEnabled
-    
-    if aimbotEnabled then
-        aimbotBtn.Text = "AIMBOT: ON"
-        aimbotBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        print("✅ Aimbot ON - Auto aiming enabled")
-        
-        -- Создаем FOV круг
-        createFovCircle()
-        fovCircle.Visible = true
-        
-        -- Включить автоматический аимбот
-        aimbotConnection = RunService.Heartbeat:Connect(function()
-            if aimbotEnabled then
-                local closestEnemy = getClosestEnemy()
-                if closestEnemy and closestEnemy.Character then
-                    local targetRoot = closestEnemy.Character:FindFirstChild("HumanoidRootPart")
-                    local camera = workspace.CurrentCamera
-                    if targetRoot and camera then
-                        -- Плавный аимбот
-                        local currentCFrame = camera.CFrame
-                        local targetCFrame = CFrame.new(camera.CFrame.Position, targetRoot.Position)
-                        camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.8)
-                    end
-                end
+    -- Aimbot (работает только при зажатой ПКМ)
+    if Settings.Aimbot and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+        local closestEnemy = getClosestEnemy()
+        if closestEnemy and closestEnemy.Character then
+            local head = closestEnemy.Character:FindFirstChild("Head")
+            local camera = workspace.CurrentCamera
+            if head and camera then
+                -- Плавное прицеливание в голову
+                local currentCFrame = camera.CFrame
+                local targetCFrame = CFrame.new(camera.CFrame.Position, head.Position)
+                camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.8)
             end
-        end)
-        
-    else
-        aimbotBtn.Text = "AIMBOT: OFF"
-        aimbotBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        print("❌ Aimbot OFF")
-        
-        -- Выключить аимбот и скрыть FOV круг
-        if aimbotConnection then
-            aimbotConnection:Disconnect()
-        end
-        if fovCircle then
-            fovCircle.Visible = false
         end
     end
 end)
 
--- 10. AIMBOT FOV SETTINGS
-local fovAimBtn = createButton("AIMBOT FOV: 100", UDim2.new(0.05, 0, 0.64, 0))
-fovAimBtn.MouseButton1Click:Connect(function()
-    aimbotFov = aimbotFov + 20
-    if aimbotFov > 200 then
-        aimbotFov = 60
-    end
-    
-    fovAimBtn.Text = "AIMBOT FOV: " .. aimbotFov
-    
-    if fovCircle then
-        fovCircle.Radius = aimbotFov
-    end
-    
-    print("🎯 Aimbot FOV set to: " .. aimbotFov)
-end)
-
--- 11. MANUAL AIM (РУЧНОЕ ПРИЦЕЛИВАНИЕ)
-local manualAimBtn = createButton("MANUAL AIM: OFF", UDim2.new(0.05, 0, 0.70, 0))
-local manualAimConnection
-
-manualAimBtn.MouseButton1Click:Connect(function()
-    autoAimEnabled = not autoAimEnabled
-    
-    if autoAimEnabled then
-        manualAimBtn.Text = "MANUAL AIM: ON"
-        manualAimBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        print("✅ Manual Aim ON - Press F to aim at closest enemy")
-        
-        -- Ручное прицеливание по нажатию F
-        manualAimConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-            if gameProcessed then return end
-            
-            if input.KeyCode == Enum.KeyCode.F and autoAimEnabled then
-                local closestEnemy = getClosestEnemy()
-                if closestEnemy and closestEnemy.Character then
-                    local targetRoot = closestEnemy.Character:FindFirstChild("HumanoidRootPart")
-                    local camera = workspace.CurrentCamera
-                    if targetRoot and camera then
-                        -- Мгновенное прицеливание
-                        camera.CFrame = CFrame.new(camera.CFrame.Position, targetRoot.Position)
-                        print("🎯 Manual aim at: " .. closestEnemy.Name)
-                    end
-                end
-            end
-        end)
-        
-    else
-        manualAimBtn.Text = "MANUAL AIM: OFF"
-        manualAimBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        print("❌ Manual Aim OFF")
-        
-        -- Выключить ручное прицеливание
-        if manualAimConnection then
-            manualAimConnection:Disconnect()
+-- Обработка новых игроков для ESP
+Players.PlayerAdded:Connect(function(newPlayer)
+    newPlayer.CharacterAdded:Connect(function(character)
+        wait(1)
+        if Settings.ESP and character then
+            local highlight = Instance.new("Highlight")
+            highlight.FillColor = Color3.new(1, 0, 0)
+            highlight.OutlineColor = Color3.new(1, 1, 1)
+            highlight.FillTransparency = 0.5
+            highlight.OutlineTransparency = 0
+            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            highlight.Parent = character
+            highlight.Adornee = character
+            highlights[newPlayer] = highlight
         end
-    end
+    end)
 end)
-
--- Информация
-local infoLabel = createLabel("Controls:", UDim2.new(0.05, 0, 0.80, 0))
-local infoLabel2 = createLabel("Insert: Show/Hide Menu", UDim2.new(0.05, 0, 0.83, 0))
-local infoLabel3 = createLabel("Delete: Destroy Menu", UDim2.new(0.05, 0, 0.86, 0))
-local infoLabel4 = createLabel("F: Manual Aim (when ON)", UDim2.new(0.05, 0, 0.89, 0))
-local infoLabel5 = createLabel("Aimbot: Auto through menu", UDim2.new(0.05, 0, 0.92, 0))
 
 -- Горячие клавиши
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -637,36 +364,37 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     
     if input.KeyCode == Enum.KeyCode.Insert then
         mainFrame.Visible = not mainFrame.Visible
-        print("📋 Menu: " .. (mainFrame.Visible and "SHOWN" or "HIDDEN"))
+        print("Menu: " .. (mainFrame.Visible and "SHOWN" or "HIDDEN"))
     elseif input.KeyCode == Enum.KeyCode.Delete then
         screenGui:Destroy()
-        if fovCircle then fovCircle:Remove() end
-        print("🗑️ Menu destroyed")
+        -- Восстанавливаем оригинальный Raycast при удалении меню
+        if originalRaycast then
+            workspace.FindPartOnRayWithIgnoreList = originalRaycast
+        end
+        print("Menu destroyed")
     elseif input.KeyCode == Enum.KeyCode.F5 then
-        -- Быстрый сброс FOV
+        -- Сброс FOV
         local camera = workspace.CurrentCamera
         if camera then
             camera.FieldOfView = 70
-            currentFov = 70
-            fovEnabled = false
-            fovBtn.Text = "FOV: 70 (OFF)"
-            fovBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            print("🔄 FOV Quick Reset to 70")
+            Settings.FOV = false
+            fovBtn.Text = "FOV: OFF"
+            fovBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+            print("FOV reset to 70")
         end
     end
 end)
 
-print("✅ Complete Cheat Menu v4.0 Loaded!")
-print("🎯 Aimbot: Automatic through menu (no RMB needed)")
-print("🔫 Wallshoot: Fixed shooting through walls")
-print("🔄 FOV Reset: Reset to default FOV")
-print("🔴 ESP: Team-based colors")
-print("👁️ FOV Changer: Increased field of view")
-print("🎯 Manual Aim: Press F to aim")
+print("✅ Duel Murder Cheat Menu Loaded!")
+print("🎯 Aimbot: Hold Right Mouse Button")
+print("🔫 Wallshoot: Shoot through walls")
+print("🔴 ESP: Red highlights on enemies")
+print("⚡ Speed: 50 walk speed")
+print("🕶️ Insert: Hide menu")
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "COMPLETE MENU v4.0 LOADED",
-    Text = "Fixed Wallshoot + Menu Aimbot!",
+    Title = "DUEL MURDER CHEATS",
+    Text = "Hold RMB for Aimbot!",
     Duration = 5
 })
